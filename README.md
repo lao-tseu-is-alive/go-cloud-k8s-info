@@ -1,14 +1,12 @@
 ### How to build and deploy a simple Golang app on K8s (without docker)
 
 #### Intro :
-In this directory [go-info](https://github.com/lao-tseu-is-alive/go-cloud-template/tree/main/go-info)
-we have all the files to compile & deploy a simple golang http server without docker.
-+ Go code is in [server.go](https://github.com/lao-tseu-is-alive/go-cloud-template/blob/main/go-info/server.go).
+In this directory we have all the files to compile & deploy a simple golang http server without docker.
++ Go code is in [server.go](https://github.com/lao-tseu-is-alive/go-cloud-k8s-info/blob/main/server.go).
 + we will use the [Rancher desktop](https://docs.rancherdesktop.io/) that deploy for you the excellent [k3s](https://k3s.io/) cluster on your dev computer.
 + The above product will also allow you to choose to build image with the [nerdctl](https://github.com/containerd/nerdctl) : the  Docker-compatible CLI for [containerd](https://containerd.io/).
 
-_In just 2 steps, you will deploy your first "tiny-service" in a local kubernetes 
-cluster, without using Docker at all._
+_In just 2 steps, you will deploy your first "tiny-service" in a local kubernetes in your computer, without using Docker at all._
 
 #### 01 : Build your container image
 in this first step we will use a [Multi-stage build](https://docs.docker.com/language/golang/build-images/#multi-stage-builds)
