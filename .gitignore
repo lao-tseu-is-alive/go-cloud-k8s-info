@@ -13,3 +13,11 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+.idea
+#
+# IaC TerraForm state and config files 
+/.terraform*
+/*.tfstate*
+/kubeconfig
+access-key.json
+go_admin_credentials_secrets
