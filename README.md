@@ -14,7 +14,7 @@ to have a clean and small final container image of our server.
 
 you can just use the bash script I have prepared for you :
 ```bash
-./build_image.sh
+scripts/01_build_image.sh
 ```
 or run the commands in this script one by one 
 ```bash
