@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	VERSION                = "0.2.8"
+	VERSION                = "0.2.9"
 	APP                    = "go-info-server"
 	DefaultPort            = 8080
 	secondsToSleep         = 10
