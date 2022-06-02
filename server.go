@@ -19,7 +19,7 @@ const (
 	VERSION                = "0.2.9"
 	APP                    = "go-info-server"
 	DefaultPort            = 8080
-	secondsToSleep         = 10
+	secondsToSleep         = 3
 	secondsShutDownTimeout = 5 // maximum number of second to wait before closing server
 )
 
@@ -54,7 +54,7 @@ func (e *ErrorConfig) Error() string {
 
 //GetPortFromEnv returns a valid TCP/IP listening ':PORT' string based on the values of environment variable :
 //	PORT : int value between 1 and 65535 (the parameter defaultPort will be used if env is not defined)
-// in case the ENV variable PORT exists and contains an invalid integer the functions returns an empty string and an error
+//  in case the ENV variable PORT exists and contains an invalid integer the functions returns an empty string and an error
 func GetPortFromEnv(defaultPort int) (string, error) {
 	srvPort := defaultPort
 
@@ -114,12 +114,12 @@ func waitForShutdown(srv *http.Server) {
 func main() {
 	listenAddr, err := GetPortFromEnv(DefaultPort)
 	if err != nil {
-		log.Fatalf("💥💥 error calling GetPortFromEnv. error: %v\n", err)
+		log.Fatalf("💥💥 ERROR: 'calling GetPortFromEnv got error: %v'\n", err)
 	}
 	//initialize a logger for server messages output
 	logger = log.New(os.Stdout, fmt.Sprintf("HTTP_SERVER_%s ", APP), log.LstdFlags)
 
-	logger.Printf("INFO: 'Starting HTTP server on port %s'", listenAddr)
+	logger.Printf("INFO: 'Starting %s version:%s HTTP server on port %s'", APP, VERSION, listenAddr)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {

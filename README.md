@@ -1,14 +1,48 @@
-### How to build and deploy a simple Golang app on K8s (without docker)
+## How to build and deploy a simple Golang app on K8s (without docker)
 
-#### Intro :
+### Intro :
 In this directory we have all the files to compile & deploy a simple golang http server without docker.
-+ Go code is in [server.go](https://github.com/lao-tseu-is-alive/go-cloud-k8s-info/blob/main/server.go).
++ The Go code is in [server.go](https://github.com/lao-tseu-is-alive/go-cloud-k8s-info/blob/main/server.go).
 + we will use the [Rancher desktop](https://docs.rancherdesktop.io/) that deploy for you the excellent [k3s](https://k3s.io/) cluster on your dev computer.
 + The above product will also allow you to choose to build image with the [nerdctl](https://github.com/containerd/nerdctl) : the  Docker-compatible CLI for [containerd](https://containerd.io/).
 
-_In just 2 steps, you will deploy your first "tiny-service" in a local kubernetes in your computer, without using Docker at all._
+### 00 : Develop and test your Go code as usual
 
-#### 01 : Build your container image
+    $> PORT=7070 go run server.go
+    HTTP_SERVER_go-info-server 2022/06/02 10:43:44 INFO: 'Starting go-info-server version:0.2.9 HTTP server on port :7070'
+    HTTP_SERVER_go-info-server 2022/06/02 10:43:44 INFO: 'Will start ListenAndServe...'
+    HTTP_SERVER_go-info-server 2022/06/02 10:45:45 request: GET '/'	remoteAddr: 127.0.0.1:54694
+
+you can then use another terminal to run a :
+
+    curl http://localhost:7070
+    {
+        "hostname": "pulsar2021",
+        "pid": 208632,
+        "ppid": 208422,
+        "uid": 1000,
+        "appname": "go-info-server",
+        "version": "0.2.9",
+        "param_name": "_EMPTY_STRING_",
+        "remote_addr": "127.0.0.1:54694",
+        "goos": "linux",
+        "goarch": "amd64",  
+        "runtime": "go1.18.2",
+        "num_goroutine": "5",
+        "num_cpu": "36",
+        "env_vars": [
+            "PORT=7070",
+            "SHELL=/bin/bash",
+        ...
+
+As you can see you got all the environment variables values.
+Take also note of the process id in pid, your userid and the num_cpu...
+
+
+_Now in just 2 easy steps, you will deploy your first "tiny-service" in 
+a local kubernetes in your computer, without using docker at all._
+
+### 01 : Build your container image
 in this first step we will use a [Multi-stage build](https://docs.docker.com/language/golang/build-images/#multi-stage-builds)
 to have a clean and small final container image of our server. 
 
@@ -20,12 +54,41 @@ or run the commands in this script one by one
 ```bash
 nerdctl -n k8s.io build -t go-info-server .
 #list all images in the kubernetes namespace of containerd
-nerdctl -n k8s.io images
+nerdctl -n k8s.io images |grep go-info-server
 #optionaly you can run your image to test if wou want
-nerdctl -n k8s.io run -it  -p 127.0.0.1:8080:8080 --rm go-info-server
+nerdctl -n k8s.io run -p 8080:8080 go-info-server
 ```
+if you did run your image as a container with the above command,
+you can check the results of a : **_curl http://localhost:8080/_**
+```json
+{
+  hostname: "48fbdda3e5c2",
+  pid: 1,
+  ppid: 0,
+  uid: 10111,
+  appname: "go-info-server",
+  version: "0.2.9",
+  param_name: "_EMPTY_STRING_",
+  remote_addr: "10.4.0.1:59936",
+  goos: "linux",
+  goarch: "amd64",
+  runtime: "go1.18.2",
+  num_goroutine: "5",
+  num_cpu: "4",
+  env_vars: [
+    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "HOME=/home/gouser"
+  ]
+}
+```
+*Did you notice how there is now only two environment variables exposed.
+Also note that the process id in pid is just 1, and the parent process id in ppid is zero.
+Finally, the userid is the one for the gouser defined in the Dockerfile* :
+
+    RUN addgroup -g 10111 -S gouser && adduser -S -G gouser -H -u 10111 gouser
+    USER gouser
  
-#### 02 : Deploy your container image to k8s
+### 02 : Deploy your container image to k8s
 again you can just use the bash script:
 ```bash
 ./deploy_to_k8s.sh
@@ -91,6 +154,7 @@ To check for vulnerabilities in your Docker and k8s yaml files in the current di
 + [Rancher Desktop: k3s and container management on your desktop](https://rancherdesktop.io/)
 + [Trivy vulnerabilities scan installation](https://aquasecurity.github.io/trivy/v0.23.0/getting-started/installation/)
 + [nerdctl command reference](https://github.com/containerd/nerdctl#command-reference)
++ [jq a lightweight and flexible command-line JSON processor](https://stedolan.github.io/jq/)
 
 #### more information :
 + [K3S networking : CoreDNS, Traefik and Klipper Load balancer](https://rancher.com/docs/k3s/latest/en/networking/)
