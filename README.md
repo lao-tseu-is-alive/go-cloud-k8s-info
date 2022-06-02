@@ -91,7 +91,7 @@ Finally, the userid is the one for the gouser defined in the Dockerfile* :
 ### 02 : Deploy your container image to k8s
 again you can just use the bash script:
 ```bash
-./deploy_to_k8s.sh
+scripts/02_deploy_to_k8s.sh
 ```
 or run the commands in this script one by one
 ```bash
@@ -99,7 +99,7 @@ kubectl apply -f k8s-deployment.yml
 #let's check the pods in the cluster
 kubectl get pods -o wide
 kubectl get services -o wide
-curl http://go-info-server.rancher.localhost:31825?name=gilou
+curl http://go-info-server.rancher.localhost:8000?name=gilou
 ```
 here is the example output from curl :
 ```json
@@ -155,6 +155,7 @@ To check for vulnerabilities in your Docker and k8s yaml files in the current di
 + [Trivy vulnerabilities scan installation](https://aquasecurity.github.io/trivy/v0.23.0/getting-started/installation/)
 + [nerdctl command reference](https://github.com/containerd/nerdctl#command-reference)
 + [jq a lightweight and flexible command-line JSON processor](https://stedolan.github.io/jq/)
++ [yq a portable command-line YAML processor](https://github.com/mikefarah/yq)
 
 #### more information :
 + [K3S networking : CoreDNS, Traefik and Klipper Load balancer](https://rancher.com/docs/k3s/latest/en/networking/)
@@ -168,6 +169,7 @@ To check for vulnerabilities in your Docker and k8s yaml files in the current di
 + [Continuous Container Vulnerability Testing with Trivy](https://semaphoreci.com/blog/continuous-container-vulnerability-testing-with-trivy)
 + [Kubernetes security overview](https://kubernetes.io/docs/concepts/security/overview/)
 + [Getting Real Client IP with k3s](https://github.com/k3s-io/k3s/discussions/2997)
++ [jq cookbook](https://github.com/stedolan/jq/wiki/Cookbook)
 
 **How to enable Traefik ingress controller dashboard :**
 ```bash
