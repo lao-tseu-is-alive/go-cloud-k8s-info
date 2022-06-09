@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	VERSION                = "0.2.9"
+	VERSION                = "0.3.0"
 	APP                    = "go-info-server"
 	DefaultPort            = 8080
 	defaultServerIp        = "127.0.0.1"
@@ -57,6 +57,7 @@ type ErrorConfig struct {
 	msg string
 }
 
+//Error returns a string with an error and a specifics message
 func (e *ErrorConfig) Error() string {
 	return fmt.Sprintf("%s : %v", e.msg, e.err)
 }
@@ -170,7 +171,7 @@ func NewGoHttpServer(listenAddress string, logger *log.Logger) *GoHttpServer {
 func (s *GoHttpServer) routes() {
 	s.router.Handle("/", s.getMyDefaultHandler())
 	s.router.Handle("/time", s.getTimeHandler())
-	s.router.Handle("/wait", s.getTimeHandler())
+	s.router.Handle("/wait", s.getWaitHandler())
 	s.router.Handle("/readiness", s.getReadinessHandler())
 	s.router.Handle("/health", s.getHealthHandler())
 
@@ -205,7 +206,7 @@ func (s *GoHttpServer) getReadinessHandler() http.HandlerFunc {
 		if r.Method == http.MethodGet {
 			w.WriteHeader(http.StatusOK)
 		} else {
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
 	}
 }
@@ -217,7 +218,7 @@ func (s *GoHttpServer) getHealthHandler() http.HandlerFunc {
 		if r.Method == http.MethodGet {
 			w.WriteHeader(http.StatusOK)
 		} else {
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
 	}
 }
