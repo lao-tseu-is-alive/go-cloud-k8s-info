@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -11,9 +12,39 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
-const DEBUG = false
+const (
+	DEBUG              = false
+	expectedJsonString = `{
+  "hostname": "pulsar2021",
+  "pid": 1,
+  "ppid": 0,
+  "uid": 1000,
+  "appname": "go-info-server",
+  "version": "0.3.0",
+  "param_name": "_NO_PARAMETER_NAME_",
+  "remote_addr": "127.0.0.1:56670",
+  "goos": "linux",
+  "goarch": "amd64",
+  "runtime": "go1.18.3",
+  "num_goroutine": "1",
+  "num_cpu": "4",
+  "env_vars": [
+    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "HOME=/home/gouser"
+  ],
+  "headers": {
+    "Accept": [
+      "*/*"
+    ],
+    "User-Agent": [
+      "curl/7.68.0"
+    ]
+  }
+}`
+)
 
 func TestErrorConfig_Error(t *testing.T) {
 	err := ErrorConfig{
@@ -131,43 +162,15 @@ func TestGetPortFromEnv(t *testing.T) {
 	}
 }
 
-func TestJSONResponse(t *testing.T) {
-	type args struct {
-		w      http.ResponseWriter
-		r      *http.Request
-		result interface{}
-	}
-	tests := []struct {
-		name string
-		args args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			JSONResponse(tt.args.w, tt.args.r, tt.args.result)
-		})
-	}
-}
-
 func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 	var l *log.Logger
 	var nameParameter string
-	type srv struct {
-		listenAddress string
-		logger        *log.Logger
-		router        *http.ServeMux
-		httpServer    http.Server
-	}
 	listenAddr := fmt.Sprintf(":%d", DefaultPort)
 	if DEBUG {
 		l = log.New(os.Stdout, fmt.Sprintf("HTTP_SERVER_%s ", APP), log.Ldate|log.Ltime|log.Lshortfile)
 	} else {
 		l = log.New(ioutil.Discard, APP, 0)
 	}
-	const jsonInitialData = `{
-  "hostname": `
-	nameParameter = ""
 
 	myServer := NewGoHttpServer(listenAddr, l)
 	ts := httptest.NewServer(myServer.getMyDefaultHandler())
@@ -191,7 +194,7 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 		{
 			name:           "1: Get on default Server Path should return a valid json containing param value",
 			wantStatusCode: http.StatusOK,
-			wantBody:       string(`"param_name": "╚»☯💥⚡✌ℂ𝔾𝕀𝕃✌⚡💥☯«╝"`),
+			wantBody:       `"param_name": "╚»☯💥⚡✌ℂ𝔾𝕀𝕃✌⚡💥☯«╝"`,
 			paramKeyValues: map[string]string{"name": "╚»☯💥⚡✌ℂ𝔾𝕀𝕃✌⚡💥☯«╝"},
 			r:              newRequest(http.MethodGet, defaultServerPath, ""),
 		},
@@ -242,11 +245,15 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 			}
 			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, "expected status code should be returned")
 			receivedJson, _ := ioutil.ReadAll(resp.Body)
-
+			rInfo := &RuntimeInfo{}
 			if DEBUG {
 				fmt.Println("param name : % v", nameParameter)
 				fmt.Printf("WANTED   :%T - %#v\n", tt.wantBody, tt.wantBody)
 				fmt.Printf("RECEIVED :%T - %#v\n", receivedJson, string(receivedJson))
+			}
+			if tt.wantStatusCode == http.StatusOK {
+				err = json.Unmarshal(receivedJson, rInfo)
+				assert.Nil(t, err, "the output should be a valid json")
 			}
 			// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
 			assert.Contains(t, string(receivedJson), tt.wantBody, "Response should contain what was expected.")
@@ -336,18 +343,143 @@ func TestGoHttpServer_getHealthHandler(t *testing.T) {
 		r              *http.Request
 	}{
 		{
-			name:           "5: Get on health should return Http Status Ok",
+			name:           "1: Get on health should return Http Status Ok",
 			wantStatusCode: http.StatusOK,
 			wantBody:       "",
 			paramKeyValues: make(map[string]string, 0),
 			r:              newRequest(http.MethodGet, "/health", ""),
 		},
 		{
-			name:           "6: Post  on health should return an http error method not allowed ",
+			name:           "2: Post on health should return an http error method not allowed ",
 			wantStatusCode: http.StatusMethodNotAllowed,
 			wantBody:       "",
 			paramKeyValues: make(map[string]string, 0),
 			r:              newRequest(http.MethodPost, "/health", `{"task":"test not allowed method "}`),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.r.Header.Set("Content-Type", "application/json")
+			resp, err := http.DefaultClient.Do(tt.r)
+			if DEBUG {
+				fmt.Printf("### %s : %s on %s\n", tt.name, tt.r.Method, tt.r.URL)
+			}
+			defer resp.Body.Close()
+			if err != nil {
+				fmt.Printf("### GOT ERROR : %s\n%s", err, resp.Body)
+				t.Fatal(err)
+			}
+			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, "expected status code should be returned")
+			receivedJson, _ := ioutil.ReadAll(resp.Body)
+
+			if DEBUG {
+				fmt.Printf("WANTED   :%T - %#v\n", tt.wantBody, tt.wantBody)
+				fmt.Printf("RECEIVED :%T - %#v\n", receivedJson, string(receivedJson))
+			}
+			// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
+			assert.Contains(t, string(receivedJson), tt.wantBody, "Response should contain what was expected.")
+		})
+	}
+}
+
+func TestGoHttpServer_getTimeHandler(t *testing.T) {
+	myServer := NewGoHttpServer(fmt.Sprintf(":%d", DefaultPort), log.New(ioutil.Discard, APP, 0))
+	ts := httptest.NewServer(myServer.getTimeHandler())
+	defer ts.Close()
+	now := time.Now()
+	expectedResult := fmt.Sprintf("{\"time\":\"%s\"}", now.Format(time.RFC3339))
+
+	newRequest := func(method, url string, body string) *http.Request {
+		r, err := http.NewRequest(method, ts.URL+url, strings.NewReader(body))
+		if err != nil {
+			t.Fatalf("### ERROR http.NewRequest %s on [%s] error is :%v\n", method, url, err)
+		}
+		return r
+	}
+
+	tests := []struct {
+		name           string
+		wantStatusCode int
+		wantBody       string
+		paramKeyValues map[string]string
+		r              *http.Request
+	}{
+		{
+			name:           "1: Get on time should return Http Status Ok",
+			wantStatusCode: http.StatusOK,
+			wantBody:       expectedResult,
+			paramKeyValues: make(map[string]string, 0),
+			r:              newRequest(http.MethodGet, "/time", ""),
+		},
+		{
+			name:           "2: Post on time should return an http error method not allowed ",
+			wantStatusCode: http.StatusMethodNotAllowed,
+			wantBody:       "",
+			paramKeyValues: make(map[string]string, 0),
+			r:              newRequest(http.MethodPost, "/time", `{"task":"test not allowed method "}`),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.r.Header.Set("Content-Type", "application/json")
+			resp, err := http.DefaultClient.Do(tt.r)
+			if DEBUG {
+				fmt.Printf("### %s : %s on %s\n", tt.name, tt.r.Method, tt.r.URL)
+			}
+			defer resp.Body.Close()
+			if err != nil {
+				fmt.Printf("### GOT ERROR : %s\n%s", err, resp.Body)
+				t.Fatal(err)
+			}
+			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, "expected status code should be returned")
+			receivedJson, _ := ioutil.ReadAll(resp.Body)
+
+			if DEBUG {
+				fmt.Printf("WANTED   :%T - %#v\n", tt.wantBody, tt.wantBody)
+				fmt.Printf("RECEIVED :%T - %#v\n", receivedJson, string(receivedJson))
+			}
+			// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
+			assert.Contains(t, string(receivedJson), tt.wantBody, "Response should contain what was expected.")
+		})
+	}
+}
+
+func TestGoHttpServer_getWaitHandler(t *testing.T) {
+	myServer := NewGoHttpServer(fmt.Sprintf(":%d", DefaultPort), log.New(ioutil.Discard, APP, 0))
+	ts := httptest.NewServer(myServer.getWaitHandler(1))
+	defer ts.Close()
+	expectedResult := fmt.Sprintf("{\"waited\":\"%v seconds\"}", 1)
+
+	newRequest := func(method, url string, body string) *http.Request {
+		r, err := http.NewRequest(method, ts.URL+url, strings.NewReader(body))
+		if err != nil {
+			t.Fatalf("### ERROR http.NewRequest %s on [%s] error is :%v\n", method, url, err)
+		}
+		return r
+	}
+
+	tests := []struct {
+		name           string
+		wantStatusCode int
+		wantBody       string
+		paramKeyValues map[string]string
+		r              *http.Request
+	}{
+		{
+			name:           "1: Get on /wait should return Http Status Ok",
+			wantStatusCode: http.StatusOK,
+			wantBody:       expectedResult,
+			paramKeyValues: make(map[string]string, 0),
+			r:              newRequest(http.MethodGet, "/wait", ""),
+		},
+		{
+			name:           "2: Post on /wait should return an http error method not allowed ",
+			wantStatusCode: http.StatusMethodNotAllowed,
+			wantBody:       "",
+			paramKeyValues: make(map[string]string, 0),
+			r:              newRequest(http.MethodPost, "/wait", `{"task":"test not allowed method "}`),
 		},
 	}
 

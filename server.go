@@ -22,12 +22,11 @@ const (
 	DefaultPort            = 8080
 	defaultServerIp        = "127.0.0.1"
 	defaultServerPath      = "/"
-	secondsToSleep         = 3
+	defaultSecondsToSleep  = 3
 	secondsShutDownTimeout = 5 * time.Second // maximum number of second to wait before closing server
 	defaultReadTimeout     = 2 * time.Minute // max time to read request from the client
 	defaultWriteTimeout    = 2 * time.Minute // max time to write response to the client
 	defaultIdleTimeout     = 2 * time.Minute // max time for connections using TCP Keep-Alive
-	defaultMessage         = "🅆🄴🄻🄲🄾🄼🄴 🄷🄾🄼🄴 🏠"
 	defaultNotFound        = "🤔 ℍ𝕞𝕞... 𝕤𝕠𝕣𝕣𝕪 :【𝟜𝟘𝟜 : ℙ𝕒𝕘𝕖 ℕ𝕠𝕥 𝔽𝕠𝕦𝕟𝕕】🕳️ 🔥"
 	htmlHeaderStart        = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css"/>`
 )
@@ -171,7 +170,7 @@ func NewGoHttpServer(listenAddress string, logger *log.Logger) *GoHttpServer {
 func (s *GoHttpServer) routes() {
 	s.router.Handle("/", s.getMyDefaultHandler())
 	s.router.Handle("/time", s.getTimeHandler())
-	s.router.Handle("/wait", s.getWaitHandler())
+	s.router.Handle("/wait", s.getWaitHandler(defaultSecondsToSleep))
 	s.router.Handle("/readiness", s.getReadinessHandler())
 	s.router.Handle("/health", s.getHealthHandler())
 
@@ -222,7 +221,6 @@ func (s *GoHttpServer) getHealthHandler() http.HandlerFunc {
 		}
 	}
 }
-
 func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 	handlerName := "getMyDefaultHandler"
 	s.logger.Printf("INITIAL CALL TO %s()\n", handlerName)
@@ -286,7 +284,6 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 		}
 	}
 }
-
 func (s *GoHttpServer) getTimeHandler() http.HandlerFunc {
 	handlerName := "getTimeHandler"
 	s.logger.Printf("INITIAL CALL TO %s()\n", handlerName)
@@ -303,15 +300,15 @@ func (s *GoHttpServer) getTimeHandler() http.HandlerFunc {
 		}
 	}
 }
-
-func (s *GoHttpServer) getWaitHandler() http.HandlerFunc {
+func (s *GoHttpServer) getWaitHandler(secondsToSleep int) http.HandlerFunc {
 	handlerName := "getWaitHandler"
 	s.logger.Printf("INITIAL CALL TO %s()\n", handlerName)
+	durationOfSleep := time.Duration(secondsToSleep) * time.Second
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Printf("TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n", handlerName, r.Method, r.URL.Path, r.RemoteAddr)
 		if r.Method == http.MethodGet {
 			w.Header().Set("Content-Type", "application/json")
-			time.Sleep(secondsToSleep * time.Second) // simulate a delay to be ready
+			time.Sleep(durationOfSleep) // simulate a delay to be ready
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprintf(w, "{\"waited\":\"%v seconds\"}", secondsToSleep)
 		} else {
