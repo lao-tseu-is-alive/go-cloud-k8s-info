@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	VERSION                = "0.3.0"
+	VERSION                = "0.3.1"
 	APP                    = "go-info-server"
 	DefaultPort            = 8080
 	defaultServerIp        = "127.0.0.1"
@@ -31,24 +31,23 @@ const (
 	htmlHeaderStart        = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css"/>`
 )
 
-var logger *log.Logger
-
 type RuntimeInfo struct {
-	Hostname     string              `json:"hostname"` //  host name reported by the kernel.
-	Pid          int                 `json:"pid"`      //  process id of the caller.
-	PPid         int                 `json:"ppid"`     //  process id of the caller's parent.
-	Uid          int                 `json:"uid"`      //  numeric user id of the caller.
-	Appname      string              `json:"appname"`
-	Version      string              `json:"version"`
-	ParamName    string              `json:"param_name"`
-	RemoteAddr   string              `json:"remote_addr"`
-	GOOS         string              `json:"goos"`
-	GOARCH       string              `json:"goarch"`
-	Runtime      string              `json:"runtime"`
-	NumGoroutine string              `json:"num_goroutine"`
-	NumCPU       string              `json:"num_cpu"`
-	EnvVars      []string            `json:"env_vars"`
-	Headers      map[string][]string `json:"headers"`
+	Hostname     string              `json:"hostname"`      //  host name reported by the kernel.
+	Pid          int                 `json:"pid"`           //  process id of the caller.
+	PPid         int                 `json:"ppid"`          //  process id of the caller's parent.
+	Uid          int                 `json:"uid"`           //  numeric user id of the caller.
+	Appname      string              `json:"appname"`       // name of this application
+	Version      string              `json:"version"`       // version of this application
+	ParamName    string              `json:"param_name"`    // value of the name parameter (_NO_PARAMETER_NAME_ if name was not set)
+	RemoteAddr   string              `json:"remote_addr"`   // remote client ip address
+	GOOS         string              `json:"goos"`          // operating system
+	GOARCH       string              `json:"goarch"`        // architecture
+	Runtime      string              `json:"runtime"`       // go runtime at compilation time
+	NumGoroutine string              `json:"num_goroutine"` // number of go routines
+	NumCPU       string              `json:"num_cpu"`       // number of cpu
+	Uptime       string              `json:"uptime"`        // tells how long this service was started
+	EnvVars      []string            `json:"env_vars"`      // environment variables
+	Headers      map[string][]string `json:"headers"`       // received headers
 }
 
 type ErrorConfig struct {
@@ -85,21 +84,6 @@ func GetPortFromEnv(defaultPort int) (string, error) {
 		}
 	}
 	return fmt.Sprintf(":%d", srvPort), nil
-}
-
-func JSONResponse(w http.ResponseWriter, r *http.Request, result interface{}) {
-	body, err := json.Marshal(result)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		logger.Printf("ERROR: 'JSON marshal failed. Error: %v'", err)
-		return
-	}
-	var prettyOutput bytes.Buffer
-	json.Indent(&prettyOutput, body, "", "  ")
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(http.StatusOK)
-	w.Write(prettyOutput.Bytes())
 }
 
 func getHtmlHeader(title string) string {
@@ -142,6 +126,7 @@ type GoHttpServer struct {
 	//DB  *db.Conn
 	logger     *log.Logger
 	router     *http.ServeMux
+	startTime  time.Time
 	httpServer http.Server
 }
 
@@ -152,6 +137,7 @@ func NewGoHttpServer(listenAddress string, logger *log.Logger) *GoHttpServer {
 		listenAddress: listenAddress,
 		logger:        logger,
 		router:        myServerMux,
+		startTime:     time.Now(),
 		httpServer: http.Server{
 			Addr:         listenAddress,       // configure the bind address
 			Handler:      myServerMux,         // set the http mux
@@ -195,6 +181,21 @@ func (s *GoHttpServer) StartServer() {
 
 }
 
+func (s *GoHttpServer) jsonResponse(w http.ResponseWriter, r *http.Request, result interface{}) {
+	body, err := json.Marshal(result)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		s.logger.Printf("ERROR: 'JSON marshal failed. Error: %v'", err)
+		return
+	}
+	var prettyOutput bytes.Buffer
+	json.Indent(&prettyOutput, body, "", "  ")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(http.StatusOK)
+	w.Write(prettyOutput.Bytes())
+}
+
 //############# BEGIN HANDLERS
 
 func (s *GoHttpServer) getReadinessHandler() http.HandlerFunc {
@@ -226,7 +227,7 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 	s.logger.Printf("INITIAL CALL TO %s()\n", handlerName)
 	hostName, err := os.Hostname()
 	if err != nil {
-		logger.Printf("💥💥 ERROR: 'os.Hostname() returned an error : %v'", err)
+		s.logger.Printf("💥💥 ERROR: 'os.Hostname() returned an error : %v'", err)
 		hostName = "#unknown#"
 	}
 
@@ -244,6 +245,7 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 		Runtime:      runtime.Version(),
 		NumGoroutine: strconv.FormatInt(int64(runtime.NumGoroutine()), 10),
 		NumCPU:       strconv.FormatInt(int64(runtime.NumCPU()), 10),
+		Uptime:       fmt.Sprintf("%s", time.Since(s.startTime)),
 		EnvVars:      os.Environ(),
 		Headers:      map[string][]string{},
 	}
@@ -261,7 +263,8 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 				}
 				data.RemoteAddr = remoteIp
 				data.Headers = r.Header
-				JSONResponse(w, r, data)
+				data.Uptime = ""
+				s.jsonResponse(w, r, data)
 				/*n, err := fmt.Fprintf(w, getHtmlPage(defaultMessage))
 				if err != nil {
 					s.logger.Printf("💥💥 ERROR: [%s] was unable to Fprintf. path:'%s', from IP: [%s], send_bytes:%d'\n", handlerName, requestedUrlPath, remoteIp, n)
