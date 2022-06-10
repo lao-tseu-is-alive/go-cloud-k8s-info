@@ -29,6 +29,12 @@ const (
 	defaultIdleTimeout     = 2 * time.Minute // max time for connections using TCP Keep-Alive
 	defaultNotFound        = "🤔 ℍ𝕞𝕞... 𝕤𝕠𝕣𝕣𝕪 :【𝟜𝟘𝟜 : ℙ𝕒𝕘𝕖 ℕ𝕠𝕥 𝔽𝕠𝕦𝕟𝕕】🕳️ 🔥"
 	htmlHeaderStart        = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css"/>`
+	charsetUTF8            = "charset=UTF-8"
+	MIMEAppJSON            = "application/json"
+	MIMEAppJSONCharsetUTF8 = MIMEAppJSON + "; " + charsetUTF8
+	HeaderContentType      = "Content-Type"
+	httpErrMethodNotAllow  = "ERROR: Http method not allowed"
+	initCallMsg            = "INITIAL CALL TO %s()\n"
 )
 
 type RuntimeInfo struct {
@@ -190,7 +196,7 @@ func (s *GoHttpServer) jsonResponse(w http.ResponseWriter, r *http.Request, resu
 	}
 	var prettyOutput bytes.Buffer
 	json.Indent(&prettyOutput, body, "", "  ")
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.StatusOK)
 	w.Write(prettyOutput.Bytes())
@@ -200,7 +206,7 @@ func (s *GoHttpServer) jsonResponse(w http.ResponseWriter, r *http.Request, resu
 
 func (s *GoHttpServer) getReadinessHandler() http.HandlerFunc {
 	handlerName := "getReadinessHandler"
-	s.logger.Printf("INITIAL CALL TO %s()\n", handlerName)
+	s.logger.Printf(initCallMsg, handlerName)
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Printf("TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n", handlerName, r.Method, r.URL.Path, r.RemoteAddr)
 		if r.Method == http.MethodGet {
@@ -212,7 +218,7 @@ func (s *GoHttpServer) getReadinessHandler() http.HandlerFunc {
 }
 func (s *GoHttpServer) getHealthHandler() http.HandlerFunc {
 	handlerName := "getHealthHandler"
-	s.logger.Printf("INITIAL CALL TO %s()\n", handlerName)
+	s.logger.Printf(initCallMsg, handlerName)
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Printf("TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n", handlerName, r.Method, r.URL.Path, r.RemoteAddr)
 		if r.Method == http.MethodGet {
@@ -224,7 +230,8 @@ func (s *GoHttpServer) getHealthHandler() http.HandlerFunc {
 }
 func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 	handlerName := "getMyDefaultHandler"
-	s.logger.Printf("INITIAL CALL TO %s()\n", handlerName)
+
+	s.logger.Printf(initCallMsg, handlerName)
 	hostName, err := os.Hostname()
 	if err != nil {
 		s.logger.Printf("💥💥 ERROR: 'os.Hostname() returned an error : %v'", err)
@@ -282,41 +289,41 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 				}
 			}
 		default:
-			s.logger.Printf("ERROR: Method not allowed. Request: %#v", r)
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			s.logger.Printf("%s. Request: %#v", httpErrMethodNotAllow, r)
+			http.Error(w, httpErrMethodNotAllow, http.StatusMethodNotAllowed)
 		}
 	}
 }
 func (s *GoHttpServer) getTimeHandler() http.HandlerFunc {
 	handlerName := "getTimeHandler"
-	s.logger.Printf("INITIAL CALL TO %s()\n", handlerName)
+	s.logger.Printf(initCallMsg, handlerName)
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Printf("TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n", handlerName, r.Method, r.URL.Path, r.RemoteAddr)
 		if r.Method == http.MethodGet {
 			now := time.Now()
-			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprintf(w, "{\"time\":\"%s\"}", now.Format(time.RFC3339))
 		} else {
-			s.logger.Printf("ERROR: Method not allowed. Request: %#v", r)
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			s.logger.Printf("%s. Request: %#v", httpErrMethodNotAllow, r)
+			http.Error(w, httpErrMethodNotAllow, http.StatusMethodNotAllowed)
 		}
 	}
 }
 func (s *GoHttpServer) getWaitHandler(secondsToSleep int) http.HandlerFunc {
 	handlerName := "getWaitHandler"
-	s.logger.Printf("INITIAL CALL TO %s()\n", handlerName)
+	s.logger.Printf(initCallMsg, handlerName)
 	durationOfSleep := time.Duration(secondsToSleep) * time.Second
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Printf("TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n", handlerName, r.Method, r.URL.Path, r.RemoteAddr)
 		if r.Method == http.MethodGet {
-			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 			time.Sleep(durationOfSleep) // simulate a delay to be ready
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprintf(w, "{\"waited\":\"%v seconds\"}", secondsToSleep)
 		} else {
-			s.logger.Printf("ERROR: Method not allowed. Request: %#v", r)
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			s.logger.Printf("%s. Request: %#v", httpErrMethodNotAllow, r)
+			http.Error(w, httpErrMethodNotAllow, http.StatusMethodNotAllowed)
 		}
 	}
 }

@@ -46,7 +46,7 @@ const (
 }`
 )
 
-func TestErrorConfig_Error(t *testing.T) {
+func TestErrorConfigError(t *testing.T) {
 	err := ErrorConfig{
 		err: errors.New("a brand ne error test"),
 		msg: "ERROR: This a test error.",
@@ -261,7 +261,7 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 	}
 }
 
-func TestGoHttpServer_getReadinessHandler(t *testing.T) {
+func TestGoHttpServerReadinessHandler(t *testing.T) {
 	myServer := NewGoHttpServer(fmt.Sprintf(":%d", DefaultPort), log.New(ioutil.Discard, APP, 0))
 	ts := httptest.NewServer(myServer.getReadinessHandler())
 	defer ts.Close()
@@ -299,7 +299,7 @@ func TestGoHttpServer_getReadinessHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.r.Header.Set("Content-Type", "application/json")
+			tt.r.Header.Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 			resp, err := http.DefaultClient.Do(tt.r)
 			if DEBUG {
 				fmt.Printf("### %s : %s on %s\n", tt.name, tt.r.Method, tt.r.URL)
@@ -322,7 +322,7 @@ func TestGoHttpServer_getReadinessHandler(t *testing.T) {
 	}
 }
 
-func TestGoHttpServer_getHealthHandler(t *testing.T) {
+func TestGoHttpServerHealthHandler(t *testing.T) {
 	myServer := NewGoHttpServer(fmt.Sprintf(":%d", DefaultPort), log.New(ioutil.Discard, APP, 0))
 	ts := httptest.NewServer(myServer.getHealthHandler())
 	defer ts.Close()
@@ -360,7 +360,7 @@ func TestGoHttpServer_getHealthHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.r.Header.Set("Content-Type", "application/json")
+			tt.r.Header.Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 			resp, err := http.DefaultClient.Do(tt.r)
 			if DEBUG {
 				fmt.Printf("### %s : %s on %s\n", tt.name, tt.r.Method, tt.r.URL)
@@ -383,7 +383,7 @@ func TestGoHttpServer_getHealthHandler(t *testing.T) {
 	}
 }
 
-func TestGoHttpServer_getTimeHandler(t *testing.T) {
+func TestGoHttpServerTimeHandler(t *testing.T) {
 	myServer := NewGoHttpServer(fmt.Sprintf(":%d", DefaultPort), log.New(ioutil.Discard, APP, 0))
 	ts := httptest.NewServer(myServer.getTimeHandler())
 	defer ts.Close()
@@ -423,7 +423,7 @@ func TestGoHttpServer_getTimeHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.r.Header.Set("Content-Type", "application/json")
+			tt.r.Header.Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 			resp, err := http.DefaultClient.Do(tt.r)
 			if DEBUG {
 				fmt.Printf("### %s : %s on %s\n", tt.name, tt.r.Method, tt.r.URL)
@@ -446,7 +446,7 @@ func TestGoHttpServer_getTimeHandler(t *testing.T) {
 	}
 }
 
-func TestGoHttpServer_getWaitHandler(t *testing.T) {
+func TestGoHttpServerWaitHandler(t *testing.T) {
 	myServer := NewGoHttpServer(fmt.Sprintf(":%d", DefaultPort), log.New(ioutil.Discard, APP, 0))
 	ts := httptest.NewServer(myServer.getWaitHandler(1))
 	defer ts.Close()
@@ -485,7 +485,7 @@ func TestGoHttpServer_getWaitHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.r.Header.Set("Content-Type", "application/json")
+			tt.r.Header.Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 			resp, err := http.DefaultClient.Do(tt.r)
 			if DEBUG {
 				fmt.Printf("### %s : %s on %s\n", tt.name, tt.r.Method, tt.r.URL)
