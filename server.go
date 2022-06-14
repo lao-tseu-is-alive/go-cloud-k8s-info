@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	VERSION                = "0.3.1"
+	VERSION                = "0.3.2"
 	APP                    = "go-info-server"
 	DefaultPort            = 8080
 	defaultServerIp        = "127.0.0.1"
