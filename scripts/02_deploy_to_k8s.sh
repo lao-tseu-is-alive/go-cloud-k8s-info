@@ -39,7 +39,7 @@ then
 	echo "## 💥💥 ERROR: ${IMAGE_FILTER}:${APP_VERSION} image was not found ! May be you need to build it first ?"
 	exit
 else
-  echo "## OK : \"${IMAGE_FILTER}:${APP_VERSION}\" image was found"
+  echo "## ✓🚀 OK: \"${IMAGE_FILTER}:${APP_VERSION}\" image was found in the k8s.io namespace will prepare the deployment..."
   echo "${JSON_APP}" | jq '.'
 fi
 echo "## Generating a deployment based on template : ${DEPLOYMENT_TEMPLATE}"

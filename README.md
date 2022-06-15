@@ -1,15 +1,27 @@
-## How to build and deploy a simple Golang app on K8s (without docker)
+## go-cloud-k8s-info
 
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=lao-tseu-is-alive_go-cloud-k8s-info&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=lao-tseu-is-alive_go-cloud-k8s-info)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=lao-tseu-is-alive_go-cloud-k8s-info&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=lao-tseu-is-alive_go-cloud-k8s-info)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=lao-tseu-is-alive_go-cloud-k8s-info&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=lao-tseu-is-alive_go-cloud-k8s-info)
 [![cve-trivy-scan](https://github.com/lao-tseu-is-alive/go-cloud-k8s-info/actions/workflows/cve-trivy-scan.yml/badge.svg)](https://github.com/lao-tseu-is-alive/go-cloud-k8s-info/actions/workflows/cve-trivy-scan.yml)
 
-### Intro :
-In this directory we have all the files to compile & deploy a simple golang http server without docker.
-+ The Go code is in [server.go](https://github.com/lao-tseu-is-alive/go-cloud-k8s-info/blob/main/server.go).
-+ we will use the [Rancher desktop](https://docs.rancherdesktop.io/) that deploy for you the excellent [k3s](https://k3s.io/) cluster on your dev computer.
-+ The above product will also allow you to choose to build image with the [nerdctl](https://github.com/containerd/nerdctl) : the  Docker-compatible CLI for [containerd](https://containerd.io/).
+_**go-cloud-k8s-info** is a simple "nano"-service written in Golang 
+that gives some runtime information. 
+This project showcases how to build a container image with nerdctl, in a secured way 
+(scan of CVE done with [Trivy](https://aquasecurity.github.io/trivy/v0.18.3/installation/))
+and how to deploy it on Kubernetes_
+### Introduction :
+In this repository you have all you need to compile & deploy 
+a simple golang microservice http server without using docker in just **two single steps** :
+    
+    scripts/01_build_image.sh
+    scripts/02_deploy_to_k8s.sh
+#### Specifications :
++ All the Go code is in one simple file [server.go](https://github.com/lao-tseu-is-alive/go-cloud-k8s-info/blob/main/server.go).
++ Using [Rancher desktop](https://docs.rancherdesktop.io/) to deploy the excellent [k3s](https://k3s.io/) kubernetes on your development computer.
++ We choose to build container image with [nerdctl](https://github.com/containerd/nerdctl): the  Docker-compatible CLI for [containerd](https://containerd.io/) just to show that you don't need Docker on your Linux box anymore.
++ We will scan for security issues and other vulnerabilities **before** building a container image (using [Trivy](https://aquasecurity.github.io/trivy/)) 
++ We will scan for security issues and other vulnerabilities **before** deploying to kubernetes (using [Trivy](https://aquasecurity.github.io/trivy/))
 
 ### 00 : Develop and test your Go code as usual
 
@@ -27,13 +39,16 @@ you can then use another terminal to run a :
         "ppid": 208422,
         "uid": 1000,
         "appname": "go-info-server",
-        "version": "0.2.9",
+        "version": "0.3.4",
         "param_name": "_EMPTY_STRING_",
         "remote_addr": "127.0.0.1:54694",
         "goos": "linux",
         "goarch": "amd64",  
         "runtime": "go1.18.2",
         "num_goroutine": "5",
+        "os_release_name": "Ubuntu",
+        "os_release_version": "20.04.4 LTS (Focal Fossa)",
+        "os_release_version_id": "20.04",
         "num_cpu": "36",
         "env_vars": [
             "PORT=7070",
@@ -72,13 +87,16 @@ you can check the results of a : **_curl http://localhost:8080/_**
   ppid: 0,
   uid: 10111,
   appname: "go-info-server",
-  version: "0.2.9",
+  version: "0.3.4",
   param_name: "_EMPTY_STRING_",
   remote_addr: "10.4.0.1:59936",
   goos: "linux",
   goarch: "amd64",
   runtime: "go1.18.2",
   num_goroutine: "5",
+  os_release_name: "Alpine Linux",
+  os_release_version: "_UNKNOWN_",
+  os_release_version_id: "3.15.4",
   num_cpu: "4",
   env_vars: [
     "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
@@ -114,12 +132,15 @@ here is the example output from curl :
   "ppid": 0,
   "uid": 0,
   "appname": "go-info-server",
-  "version": "0.2.1",
+  "version": "0.3.4",
   "param_name": "gilou",
   "goos": "linux",
   "goarch": "amd64",
   "runtime": "go1.17.7",
   "num_goroutine": "5",
+  os_release_name: "Alpine Linux",
+  os_release_version: "_UNKNOWN_",
+  os_release_version_id: "3.15.4",
   "num_cpu": "4",
   "env_vars": [
     "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",

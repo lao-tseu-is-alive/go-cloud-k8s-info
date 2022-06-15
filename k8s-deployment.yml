@@ -46,7 +46,7 @@ spec:
           - 100
       containers:
       - name: go-info-server
-        image: laotseu/go-info-server:0.2.9
+        image: laotseu/go-info-server:0.3.4
         imagePullPolicy: IfNotPresent
         securityContext:
           allowPrivilegeEscalation: false

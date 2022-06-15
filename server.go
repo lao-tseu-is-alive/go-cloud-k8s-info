@@ -5,10 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/fs"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -17,7 +20,7 @@ import (
 )
 
 const (
-	VERSION                = "0.3.2"
+	VERSION                = "0.3.4"
 	APP                    = "go-info-server"
 	DefaultPort            = 8080
 	defaultServerIp        = "127.0.0.1"
@@ -35,25 +38,31 @@ const (
 	HeaderContentType      = "Content-Type"
 	httpErrMethodNotAllow  = "ERROR: Http method not allowed"
 	initCallMsg            = "INITIAL CALL TO %s()\n"
+	// defaultUnknown         = "¯\\_( ͡° ͜ʖ ͡°)_/¯"
+	defaultUnknown = "_UNKNOWN_"
 )
 
 type RuntimeInfo struct {
-	Hostname     string              `json:"hostname"`      //  host name reported by the kernel.
-	Pid          int                 `json:"pid"`           //  process id of the caller.
-	PPid         int                 `json:"ppid"`          //  process id of the caller's parent.
-	Uid          int                 `json:"uid"`           //  numeric user id of the caller.
-	Appname      string              `json:"appname"`       // name of this application
-	Version      string              `json:"version"`       // version of this application
-	ParamName    string              `json:"param_name"`    // value of the name parameter (_NO_PARAMETER_NAME_ if name was not set)
-	RemoteAddr   string              `json:"remote_addr"`   // remote client ip address
-	GOOS         string              `json:"goos"`          // operating system
-	GOARCH       string              `json:"goarch"`        // architecture
-	Runtime      string              `json:"runtime"`       // go runtime at compilation time
-	NumGoroutine string              `json:"num_goroutine"` // number of go routines
-	NumCPU       string              `json:"num_cpu"`       // number of cpu
-	Uptime       string              `json:"uptime"`        // tells how long this service was started
-	EnvVars      []string            `json:"env_vars"`      // environment variables
-	Headers      map[string][]string `json:"headers"`       // received headers
+	Hostname           string              `json:"hostname"`              //  host name reported by the kernel.
+	Pid                int                 `json:"pid"`                   //  process id of the caller.
+	PPid               int                 `json:"ppid"`                  //  process id of the caller's parent.
+	Uid                int                 `json:"uid"`                   //  numeric user id of the caller.
+	Appname            string              `json:"appname"`               // name of this application
+	Version            string              `json:"version"`               // version of this application
+	ParamName          string              `json:"param_name"`            // value of the name parameter (_NO_PARAMETER_NAME_ if name was not set)
+	RemoteAddr         string              `json:"remote_addr"`           // remote client ip address
+	GOOS               string              `json:"goos"`                  // operating system
+	GOARCH             string              `json:"goarch"`                // architecture
+	Runtime            string              `json:"runtime"`               // go runtime at compilation time
+	NumGoroutine       string              `json:"num_goroutine"`         // number of go routines
+	OsReleaseName      string              `json:"os_release_name"`       // Linux release Name or _UNKNOWN_
+	OsReleaseVersion   string              `json:"os_release_version"`    // Linux release Version or _UNKNOWN_
+	OsReleaseVersionId string              `json:"os_release_version_id"` // Linux release VersionId or _UNKNOWN_
+	NumCPU             string              `json:"num_cpu"`               // number of cpu
+	Uptime             string              `json:"uptime"`                // tells how long this service was started based on an internal varaible
+	UptimeOs           string              `json:"uptime_os"`             // tells how long this service was started based on an internal varaible
+	EnvVars            []string            `json:"env_vars"`              // environment variables
+	Headers            map[string][]string `json:"headers"`               // received headers
 }
 
 type ErrorConfig struct {
@@ -64,6 +73,63 @@ type ErrorConfig struct {
 //Error returns a string with an error and a specifics message
 func (e *ErrorConfig) Error() string {
 	return fmt.Sprintf("%s : %v", e.msg, e.err)
+}
+
+type OsInfo struct {
+	Name      string `json:"name"`
+	Version   string `json:"version"`
+	VersionId string `json:"versionId"`
+}
+
+func GetOsInfo() (*OsInfo, ErrorConfig) {
+	const (
+		OsReleasePath          = "/etc/os-release"
+		regexFindOsNameVersion = `(?m)^NAME="(?P<name>[^"]+)"\s?|^VERSION="(?P<version>[^"]+)"|^VERSION_ID="?(?P<versid>[^"]+)"?\s`
+	)
+	info := OsInfo{
+		Name:      defaultUnknown,
+		Version:   defaultUnknown,
+		VersionId: defaultUnknown,
+	}
+	content, err := ioutil.ReadFile(OsReleasePath)
+	if err != nil {
+		return &info, ErrorConfig{
+			err: err,
+			msg: "GetOsInfo: error reading " + OsReleasePath,
+		}
+	}
+	r, err := regexp.Compile(regexFindOsNameVersion)
+	if err != nil {
+		return nil, ErrorConfig{
+			err: err,
+			msg: "GetOsInfo: error Compiling regexp " + regexFindOsNameVersion,
+		}
+	}
+	// fmt.Printf("Found matches : %v\n", r.MatchString(string(content)))
+	if r.MatchString(string(content)) {
+		res := r.FindAllStringSubmatch(string(content), -1)
+		for i, v := range res {
+			// fmt.Printf("res[%d] : %+#v\n", i, v)
+			for j, key := range r.SubexpNames() {
+				if j > 0 && i <= len(res) && len(v[j]) > 0 {
+					// fmt.Printf("name :'%s' : %+#v\n", key, v[j])
+					if key == "name" {
+						info.Name = v[j]
+					}
+					if key == "version" {
+						info.Version = v[j]
+					}
+					if key == "versid" {
+						info.VersionId = v[j]
+					}
+				}
+			}
+		}
+	}
+	return &info, ErrorConfig{
+		err: nil,
+		msg: "",
+	}
 }
 
 //GetPortFromEnv returns a valid TCP/IP listening ':PORT' string based on the values of environment variable :
@@ -238,23 +304,38 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 		hostName = "#unknown#"
 	}
 
+	osReleaseInfo, errConf := GetOsInfo()
+
+	if errConf.err != nil {
+		switch errConf.err.(type) {
+		case *fs.PathError:
+			s.logger.Printf("NOTICE: 'GetOsInfo() dif not find os-release : %v'", errConf.err)
+		default:
+			s.logger.Printf("💥💥 ERROR: 'GetOsInfo() returned an error : %+#v'", errConf.err)
+		}
+	}
+	// fmt.Printf("%+v\n", osReleaseInfo)
+
 	data := RuntimeInfo{
-		Hostname:     hostName,
-		Pid:          os.Getpid(),
-		PPid:         os.Getppid(),
-		Uid:          os.Getuid(),
-		Appname:      APP,
-		Version:      VERSION,
-		ParamName:    "_NO_PARAMETER_NAME_",
-		RemoteAddr:   "",
-		GOOS:         runtime.GOOS,
-		GOARCH:       runtime.GOARCH,
-		Runtime:      runtime.Version(),
-		NumGoroutine: strconv.FormatInt(int64(runtime.NumGoroutine()), 10),
-		NumCPU:       strconv.FormatInt(int64(runtime.NumCPU()), 10),
-		Uptime:       fmt.Sprintf("%s", time.Since(s.startTime)),
-		EnvVars:      os.Environ(),
-		Headers:      map[string][]string{},
+		Hostname:           hostName,
+		Pid:                os.Getpid(),
+		PPid:               os.Getppid(),
+		Uid:                os.Getuid(),
+		Appname:            APP,
+		Version:            VERSION,
+		ParamName:          "_NO_PARAMETER_NAME_",
+		RemoteAddr:         "",
+		GOOS:               runtime.GOOS,
+		GOARCH:             runtime.GOARCH,
+		Runtime:            runtime.Version(),
+		NumGoroutine:       strconv.FormatInt(int64(runtime.NumGoroutine()), 10),
+		OsReleaseName:      osReleaseInfo.Name,
+		OsReleaseVersion:   osReleaseInfo.Version,
+		OsReleaseVersionId: osReleaseInfo.VersionId,
+		NumCPU:             strconv.FormatInt(int64(runtime.NumCPU()), 10),
+		Uptime:             fmt.Sprintf("%s", time.Since(s.startTime)),
+		EnvVars:            os.Environ(),
+		Headers:            map[string][]string{},
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		remoteIp := r.RemoteAddr // ip address of the original request or the last proxy
