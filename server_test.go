@@ -523,7 +523,7 @@ func TestMainExecution(t *testing.T) {
 		defer wg.Done()
 		main()
 	}()
-	WaitForHttpServer(listenAddr, 500*time.Millisecond, 1*time.Second, 10)
+	WaitForHttpServer(listenAddr, 1*time.Second, 10)
 
 	resp, err := http.Get(listenAddr)
 	if err != nil {

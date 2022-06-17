@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	VERSION                = "0.3.4"
+	VERSION                = "0.3.6"
 	APP                    = "go-info-server"
 	defaultProtocol        = "http"
 	defaultPort            = 8080
@@ -165,7 +165,7 @@ func getHtmlPage(title string) string {
 // WaitForHttpServer attempts to establish a TCP connection to listenAddress
 // in a given amount of time. It returns upon a successful connection;
 // otherwise exits with an error.
-func WaitForHttpServer(listenAddress string, dialTimeout time.Duration, waitDuration time.Duration, numRetries int) {
+func WaitForHttpServer(listenAddress string, waitDuration time.Duration, numRetries int) {
 	httpClient := http.Client{
 		Timeout: 5 * time.Second,
 	}

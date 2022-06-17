@@ -4,6 +4,7 @@
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=lao-tseu-is-alive_go-cloud-k8s-info&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=lao-tseu-is-alive_go-cloud-k8s-info)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=lao-tseu-is-alive_go-cloud-k8s-info&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=lao-tseu-is-alive_go-cloud-k8s-info)
 [![cve-trivy-scan](https://github.com/lao-tseu-is-alive/go-cloud-k8s-info/actions/workflows/cve-trivy-scan.yml/badge.svg)](https://github.com/lao-tseu-is-alive/go-cloud-k8s-info/actions/workflows/cve-trivy-scan.yml)
+[![codecov](https://codecov.io/gh/lao-tseu-is-alive/go-cloud-k8s-info/branch/main/graph/badge.svg)](https://codecov.io/gh/lao-tseu-is-alive/go-cloud-k8s-info)
 
 _**go-cloud-k8s-info** is a simple "nano"-service written in Golang 
 that gives some runtime information. 
