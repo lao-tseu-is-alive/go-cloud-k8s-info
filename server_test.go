@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -87,7 +88,7 @@ func TestGetPortFromEnv(t *testing.T) {
 		{
 			name: "should return the default values when env variables are not set",
 			args: args{
-				defaultPort: DefaultPort,
+				defaultPort: defaultPort,
 			},
 			envPORT:       "",
 			want:          ":8080",
@@ -165,7 +166,7 @@ func TestGetPortFromEnv(t *testing.T) {
 func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 	var l *log.Logger
 	var nameParameter string
-	listenAddr := fmt.Sprintf(":%d", DefaultPort)
+	listenAddr := fmt.Sprintf(":%d", defaultPort)
 	if DEBUG {
 		l = log.New(os.Stdout, fmt.Sprintf("HTTP_SERVER_%s ", APP), log.Ldate|log.Ltime|log.Lshortfile)
 	} else {
@@ -262,7 +263,7 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 }
 
 func TestGoHttpServerReadinessHandler(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", DefaultPort), log.New(ioutil.Discard, APP, 0))
+	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(ioutil.Discard, APP, 0))
 	ts := httptest.NewServer(myServer.getReadinessHandler())
 	defer ts.Close()
 
@@ -323,7 +324,7 @@ func TestGoHttpServerReadinessHandler(t *testing.T) {
 }
 
 func TestGoHttpServerHealthHandler(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", DefaultPort), log.New(ioutil.Discard, APP, 0))
+	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(ioutil.Discard, APP, 0))
 	ts := httptest.NewServer(myServer.getHealthHandler())
 	defer ts.Close()
 
@@ -384,7 +385,7 @@ func TestGoHttpServerHealthHandler(t *testing.T) {
 }
 
 func TestGoHttpServerTimeHandler(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", DefaultPort), log.New(ioutil.Discard, APP, 0))
+	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(ioutil.Discard, APP, 0))
 	ts := httptest.NewServer(myServer.getTimeHandler())
 	defer ts.Close()
 	now := time.Now()
@@ -447,7 +448,7 @@ func TestGoHttpServerTimeHandler(t *testing.T) {
 }
 
 func TestGoHttpServerWaitHandler(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", DefaultPort), log.New(ioutil.Discard, APP, 0))
+	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(ioutil.Discard, APP, 0))
 	ts := httptest.NewServer(myServer.getWaitHandler(1))
 	defer ts.Close()
 	expectedResult := fmt.Sprintf("{\"waited\":\"%v seconds\"}", 1)
@@ -506,4 +507,43 @@ func TestGoHttpServerWaitHandler(t *testing.T) {
 			assert.Contains(t, string(receivedJson), tt.wantBody, "Response should contain what was expected.")
 		})
 	}
+}
+
+func TestMainExecution(t *testing.T) {
+	listenAddr := fmt.Sprintf("%s://%s:%d%s", defaultProtocol, defaultServerIp, defaultPort, defaultServerPath)
+	err := os.Setenv("PORT", fmt.Sprintf("%d", defaultPort))
+	if err != nil {
+		t.Errorf("Unable to set env variable PORT")
+		return
+	}
+	// starting main in his own go routine
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		main()
+	}()
+	WaitForHttpServer(listenAddr, 500*time.Millisecond, 1*time.Second, 10)
+
+	resp, err := http.Get(listenAddr)
+	if err != nil {
+		t.Fatalf("Cannot make http get: %v\n", err)
+	}
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "Should return an http status ok")
+
+	receivedJson, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("Error reading response body: %v\n", err)
+	}
+	var decodedResponse OsInfo
+	err = json.Unmarshal(receivedJson, &decodedResponse)
+	assert.Nil(t, err, "the output should be a valid json")
+	if err != nil {
+		t.Fatalf("Cannot decode response <%p> from server. Err: %v", receivedJson, err)
+	}
+
+	// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
+	assert.Contains(t, string(receivedJson), fmt.Sprintf("\"appname\": \"%s\"", APP), "Response should contain the appname field.")
+
 }

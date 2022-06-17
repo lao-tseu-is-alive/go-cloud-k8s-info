@@ -22,7 +22,8 @@ import (
 const (
 	VERSION                = "0.3.4"
 	APP                    = "go-info-server"
-	DefaultPort            = 8080
+	defaultProtocol        = "http"
+	defaultPort            = 8080
 	defaultServerIp        = "127.0.0.1"
 	defaultServerPath      = "/"
 	defaultSecondsToSleep  = 3
@@ -98,13 +99,7 @@ func GetOsInfo() (*OsInfo, ErrorConfig) {
 			msg: "GetOsInfo: error reading " + OsReleasePath,
 		}
 	}
-	r, err := regexp.Compile(regexFindOsNameVersion)
-	if err != nil {
-		return nil, ErrorConfig{
-			err: err,
-			msg: "GetOsInfo: error Compiling regexp " + regexFindOsNameVersion,
-		}
-	}
+	r := regexp.MustCompile(regexFindOsNameVersion)
 	// fmt.Printf("Found matches : %v\n", r.MatchString(string(content)))
 	if r.MatchString(string(content)) {
 		res := r.FindAllStringSubmatch(string(content), -1)
@@ -165,6 +160,28 @@ func getHtmlHeader(title string) string {
 func getHtmlPage(title string) string {
 	return getHtmlHeader(title) +
 		fmt.Sprintf("\n<body><div class=\"container\"><h3>%s</h3></div></body></html>", title)
+}
+
+// WaitForHttpServer attempts to establish a TCP connection to listenAddress
+// in a given amount of time. It returns upon a successful connection;
+// otherwise exits with an error.
+func WaitForHttpServer(listenAddress string, dialTimeout time.Duration, waitDuration time.Duration, numRetries int) {
+	httpClient := http.Client{
+		Timeout: 5 * time.Second,
+	}
+	for i := 0; i < numRetries; i++ {
+		//conn, err := net.DialTimeout("tcp", listenAddress, dialTimeout)
+		resp, err := httpClient.Get(listenAddress)
+		if err != nil {
+			fmt.Printf("\n[%d] Cannot make http get %s: %v\n", i, listenAddress, err)
+			time.Sleep(waitDuration)
+			continue
+		}
+		// All seems is good
+		fmt.Printf("OK: Server responded after %d retries, with status code %d ", i, resp.StatusCode)
+		return
+	}
+	log.Fatalf("Server %s not ready up after %d attempts", listenAddress, numRetries)
 }
 
 //waitForShutdownToExit will wait for interrupt signal SIGINT or SIGTERM and gracefully shutdown the server after secondsToWait seconds.
@@ -240,7 +257,7 @@ func (s *GoHttpServer) StartServer() {
 
 	// Starting the web server in his own goroutine
 	go func() {
-		s.logger.Printf("INFO: Starting http server listening at http://localhost%s/", s.listenAddress)
+		s.logger.Printf("INFO: Starting http server listening at %s://%s/", defaultProtocol, s.listenAddress)
 		err := s.httpServer.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
 			s.logger.Fatalf("💥💥 ERROR: 'Could not listen on %q: %s'\n", s.listenAddress, err)
@@ -351,7 +368,7 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 				}
 				data.RemoteAddr = remoteIp
 				data.Headers = r.Header
-				data.Uptime = ""
+				data.Uptime = fmt.Sprintf("%s", time.Since(s.startTime))
 				s.jsonResponse(w, r, data)
 				/*n, err := fmt.Fprintf(w, getHtmlPage(defaultMessage))
 				if err != nil {
@@ -411,10 +428,11 @@ func (s *GoHttpServer) getWaitHandler(secondsToSleep int) http.HandlerFunc {
 
 //############# END HANDLERS
 func main() {
-	listenAddr, err := GetPortFromEnv(DefaultPort)
+	listenAddr, err := GetPortFromEnv(defaultPort)
 	if err != nil {
 		log.Fatalf("💥💥 ERROR: 'calling GetPortFromEnv got error: %v'\n", err)
 	}
+	listenAddr = defaultServerIp + listenAddr
 	l := log.New(os.Stdout, fmt.Sprintf("HTTP_SERVER_%s ", APP), log.Ldate|log.Ltime|log.Lshortfile)
 	l.Printf("INFO: 'Starting %s version:%s HTTP server on port %s'", APP, VERSION, listenAddr)
 	server := NewGoHttpServer(listenAddr, l)
