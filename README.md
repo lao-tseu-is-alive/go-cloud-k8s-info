@@ -23,6 +23,12 @@ a simple golang microservice http server without using docker in just **two sing
 + We choose to build container image with [nerdctl](https://github.com/containerd/nerdctl): the  Docker-compatible CLI for [containerd](https://containerd.io/) just to show that you don't need Docker on your Linux box anymore.
 + We will scan for security issues and other vulnerabilities **before** building a container image (using [Trivy](https://aquasecurity.github.io/trivy/)) 
 + We will scan for security issues and other vulnerabilities **before** deploying to kubernetes (using [Trivy](https://aquasecurity.github.io/trivy/))
++ We will avoid deploying and using docker because giving someone access to the Docker daemon is equivalent to giving them root access to the host operating system, i.e., handing them an escalated privilege :
+
+_With this simple docker command, you will be able to [create a brand-new root user on the host machine](https://flast101.github.io/docker-privesc/) 
+from inside your container:_
+
+    docker run -v /:/mnt --rm -it alpine chroot /mnt sh
 
 ### 00 : Develop and test your Go code as usual
 
@@ -193,6 +199,8 @@ To check for vulnerabilities in your Docker and k8s yaml files in the current di
 + [Rancher Desktop and nerdctl for local K8s dev](https://itnext.io/rancher-desktop-and-nerdctl-for-local-k8s-dev-d1348629932a)
 + [nerdctl: Docker-compatible CLI for containerd (github)](https://github.com/containerd/nerdctl)
 + [Best practices for writing Dockerfiles](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
++ [Privilege escalation through Docker containers](https://flast101.github.io/docker-privesc/)
++ [Privilege Escalation in Docker (SecureFlag KB)](https://knowledge-base.secureflag.com/vulnerabilities/broken_authorization/privilege_escalation_docker.html#privilege-escalation-in-docker)
 + [Continuous Container Vulnerability Testing with Trivy](https://semaphoreci.com/blog/continuous-container-vulnerability-testing-with-trivy)
 + [Kubernetes security overview](https://kubernetes.io/docs/concepts/security/overview/)
 + [Getting Real Client IP with k3s](https://github.com/k3s-io/k3s/discussions/2997)
