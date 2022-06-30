@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/rs/xid"
 	"io/fs"
 	"io/ioutil"
 	"log"
@@ -20,7 +21,7 @@ import (
 )
 
 const (
-	VERSION                = "0.3.6"
+	VERSION                = "0.3.7"
 	APP                    = "go-info-server"
 	defaultProtocol        = "http"
 	defaultPort            = 8080
@@ -52,6 +53,7 @@ type RuntimeInfo struct {
 	Version            string              `json:"version"`               // version of this application
 	ParamName          string              `json:"param_name"`            // value of the name parameter (_NO_PARAMETER_NAME_ if name was not set)
 	RemoteAddr         string              `json:"remote_addr"`           // remote client ip address
+	RequestId          string              `json:"request_id"`            //  globally unique request id
 	GOOS               string              `json:"goos"`                  // operating system
 	GOARCH             string              `json:"goarch"`                // architecture
 	Runtime            string              `json:"runtime"`               // go runtime at compilation time
@@ -342,6 +344,7 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 		Version:            VERSION,
 		ParamName:          "_NO_PARAMETER_NAME_",
 		RemoteAddr:         "",
+		RequestId:          "",
 		GOOS:               runtime.GOOS,
 		GOARCH:             runtime.GOARCH,
 		Runtime:            runtime.Version(),
@@ -357,6 +360,8 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		remoteIp := r.RemoteAddr // ip address of the original request or the last proxy
 		requestedUrlPath := r.URL.Path
+		guid := xid.New()
+		s.logger.Printf("INFO: 'Request ID: %s'\n", guid.String())
 		s.logger.Printf("TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n", handlerName, r.Method, requestedUrlPath, remoteIp)
 		switch r.Method {
 		case http.MethodGet:
@@ -369,6 +374,7 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 				data.RemoteAddr = remoteIp
 				data.Headers = r.Header
 				data.Uptime = fmt.Sprintf("%s", time.Since(s.startTime))
+				data.RequestId = guid.String()
 				s.jsonResponse(w, r, data)
 				/*n, err := fmt.Fprintf(w, getHtmlPage(defaultMessage))
 				if err != nil {

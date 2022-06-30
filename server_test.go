@@ -545,5 +545,6 @@ func TestMainExecution(t *testing.T) {
 
 	// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
 	assert.Contains(t, string(receivedJson), fmt.Sprintf("\"appname\": \"%s\"", APP), "Response should contain the appname field.")
+	assert.Contains(t, string(receivedJson), "\"request_id\":", "Response should contain the request_id field.")
 
 }

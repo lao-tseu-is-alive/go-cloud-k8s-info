@@ -6,6 +6,7 @@ resource "aws_eks_cluster" "primary" {
   vpc_config {
     security_group_ids = [aws_security_group.worker.id]
     subnet_ids         = aws_subnet.worker[*].id
+    endpoint_public_access = false
   }
 
   depends_on = [
