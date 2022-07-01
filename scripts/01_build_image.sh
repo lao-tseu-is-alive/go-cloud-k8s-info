@@ -20,8 +20,9 @@ then
 else
 	echo "## ENV variable APP_NAME found : ${APP_NAME}"
 fi
-DOCKER_BIN=docker
+# for k8s namespace
 DOCKER_BIN="nerdctl -n k8s.io"
+DOCKER_BIN="nerdctl"
 if $DOCKER_BIN --version;
 then
   echo "## will use \"${DOCKER_BIN}\" to build the container image on linux "
@@ -53,7 +54,7 @@ then
         APP_ID=$(echo "${JSON_APP}" | jq '.|.ID')
         echo "Info about your image :"
         echo "${JSON_APP}" | jq '.'
-        echo "to try your container image locally :  ${DOCKER_BIN} run -p 8080:8080 ${CONTAINER_REGISTRY_ID}/${APP_NAME}"
+        echo "to try your container image locally :  ${DOCKER_BIN} run -p 8888:8080 --name ${APP_NAME} ${CONTAINER_REGISTRY_ID}/${APP_NAME}"
         echo "to try to open a shell inside your container :  ${DOCKER_BIN} run -it ${CONTAINER_REGISTRY_ID}/${APP_NAME} /bin/sh"
         echo "to deploy your container image to docker hub :  ${DOCKER_BIN} push ${CONTAINER_REGISTRY_ID}/${APP_NAME}"
         echo "to latter remove the images :  ${DOCKER_BIN} rmi ${CONTAINER_REGISTRY_ID}/${APP_NAME}"

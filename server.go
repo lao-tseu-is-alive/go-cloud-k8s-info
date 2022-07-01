@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/rs/xid"
 	"io/fs"
 	"io/ioutil"
 	"log"
@@ -18,6 +17,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/rs/xid"
 )
 
 const (
@@ -25,7 +26,7 @@ const (
 	APP                    = "go-info-server"
 	defaultProtocol        = "http"
 	defaultPort            = 8080
-	defaultServerIp        = "127.0.0.1"
+	defaultServerIp        = ""
 	defaultServerPath      = "/"
 	defaultSecondsToSleep  = 3
 	secondsShutDownTimeout = 5 * time.Second // maximum number of second to wait before closing server
