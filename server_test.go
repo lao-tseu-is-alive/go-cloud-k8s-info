@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	DEBUG              = false
-	expectedJsonString = `{
+	DEBUG                           = false
+	assertCorrectStatusCodeExpected = "expected status code should be returned"
+	expectedJsonString              = `{
   "hostname": "pulsar2021",
   "pid": 1,
   "ppid": 0,
@@ -46,6 +47,14 @@ const (
   }
 }`
 )
+
+type testStruct struct {
+	name           string
+	wantStatusCode int
+	wantBody       string
+	paramKeyValues map[string]string
+	r              *http.Request
+}
 
 func TestErrorConfigError(t *testing.T) {
 	err := ErrorConfig{
@@ -185,13 +194,7 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 		return r
 	}
 
-	tests := []struct {
-		name           string
-		wantStatusCode int
-		wantBody       string
-		paramKeyValues map[string]string
-		r              *http.Request
-	}{
+	tests := []testStruct{
 		{
 			name:           "1: Get on default Server Path should return a valid json containing param value",
 			wantStatusCode: http.StatusOK,
@@ -244,7 +247,7 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 				fmt.Printf("### GOT ERROR : %s\n%s", err, resp.Body)
 				t.Fatal(err)
 			}
-			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, "expected status code should be returned")
+			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
 			receivedJson, _ := ioutil.ReadAll(resp.Body)
 			rInfo := &RuntimeInfo{}
 			if DEBUG {
@@ -275,13 +278,7 @@ func TestGoHttpServerReadinessHandler(t *testing.T) {
 		return r
 	}
 
-	tests := []struct {
-		name           string
-		wantStatusCode int
-		wantBody       string
-		paramKeyValues map[string]string
-		r              *http.Request
-	}{
+	tests := []testStruct{
 		{
 			name:           "5: Get on readiness should return Http Status Ok",
 			wantStatusCode: http.StatusOK,
@@ -310,17 +307,21 @@ func TestGoHttpServerReadinessHandler(t *testing.T) {
 				fmt.Printf("### GOT ERROR : %s\n%s", err, resp.Body)
 				t.Fatal(err)
 			}
-			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, "expected status code should be returned")
+			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
 			receivedJson, _ := ioutil.ReadAll(resp.Body)
 
 			if DEBUG {
-				fmt.Printf("WANTED   :%T - %#v\n", tt.wantBody, tt.wantBody)
-				fmt.Printf("RECEIVED :%T - %#v\n", receivedJson, string(receivedJson))
+				printWantedReceived(tt, receivedJson)
 			}
 			// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
 			assert.Contains(t, string(receivedJson), tt.wantBody, "Response should contain what was expected.")
 		})
 	}
+}
+
+func printWantedReceived(tt testStruct, receivedJson []byte) {
+	fmt.Printf("WANTED   :%T - %#v\n", tt.wantBody, tt.wantBody)
+	fmt.Printf("RECEIVED :%T - %#v\n", receivedJson, string(receivedJson))
 }
 
 func TestGoHttpServerHealthHandler(t *testing.T) {
@@ -336,13 +337,7 @@ func TestGoHttpServerHealthHandler(t *testing.T) {
 		return r
 	}
 
-	tests := []struct {
-		name           string
-		wantStatusCode int
-		wantBody       string
-		paramKeyValues map[string]string
-		r              *http.Request
-	}{
+	tests := []testStruct{
 		{
 			name:           "1: Get on health should return Http Status Ok",
 			wantStatusCode: http.StatusOK,
@@ -371,7 +366,7 @@ func TestGoHttpServerHealthHandler(t *testing.T) {
 				fmt.Printf("### GOT ERROR : %s\n%s", err, resp.Body)
 				t.Fatal(err)
 			}
-			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, "expected status code should be returned")
+			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
 			receivedJson, _ := ioutil.ReadAll(resp.Body)
 
 			if DEBUG {
@@ -399,13 +394,7 @@ func TestGoHttpServerTimeHandler(t *testing.T) {
 		return r
 	}
 
-	tests := []struct {
-		name           string
-		wantStatusCode int
-		wantBody       string
-		paramKeyValues map[string]string
-		r              *http.Request
-	}{
+	tests := []testStruct{
 		{
 			name:           "1: Get on time should return Http Status Ok",
 			wantStatusCode: http.StatusOK,
@@ -434,7 +423,7 @@ func TestGoHttpServerTimeHandler(t *testing.T) {
 				fmt.Printf("### GOT ERROR : %s\n%s", err, resp.Body)
 				t.Fatal(err)
 			}
-			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, "expected status code should be returned")
+			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
 			receivedJson, _ := ioutil.ReadAll(resp.Body)
 
 			if DEBUG {
@@ -461,13 +450,7 @@ func TestGoHttpServerWaitHandler(t *testing.T) {
 		return r
 	}
 
-	tests := []struct {
-		name           string
-		wantStatusCode int
-		wantBody       string
-		paramKeyValues map[string]string
-		r              *http.Request
-	}{
+	tests := []testStruct{
 		{
 			name:           "1: Get on /wait should return Http Status Ok",
 			wantStatusCode: http.StatusOK,
@@ -496,7 +479,7 @@ func TestGoHttpServerWaitHandler(t *testing.T) {
 				fmt.Printf("### GOT ERROR : %s\n%s", err, resp.Body)
 				t.Fatal(err)
 			}
-			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, "expected status code should be returned")
+			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
 			receivedJson, _ := ioutil.ReadAll(resp.Body)
 
 			if DEBUG {

@@ -42,7 +42,9 @@ const (
 	httpErrMethodNotAllow  = "ERROR: Http method not allowed"
 	initCallMsg            = "INITIAL CALL TO %s()\n"
 	// defaultUnknown         = "¯\\_( ͡° ͜ʖ ͡°)_/¯"
-	defaultUnknown = "_UNKNOWN_"
+	defaultUnknown     = "_UNKNOWN_"
+	formatTraceRequest = "TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n"
+	formatErrRequest   = "ERROR: Http method not allowed [%s] %s  path:'%s', RemoteAddrIP: [%s]\n"
 )
 
 type RuntimeInfo struct {
@@ -294,7 +296,7 @@ func (s *GoHttpServer) getReadinessHandler() http.HandlerFunc {
 	handlerName := "getReadinessHandler"
 	s.logger.Printf(initCallMsg, handlerName)
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.logger.Printf("TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n", handlerName, r.Method, r.URL.Path, r.RemoteAddr)
+		s.logger.Printf(formatTraceRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
 		if r.Method == http.MethodGet {
 			w.WriteHeader(http.StatusOK)
 		} else {
@@ -306,7 +308,7 @@ func (s *GoHttpServer) getHealthHandler() http.HandlerFunc {
 	handlerName := "getHealthHandler"
 	s.logger.Printf(initCallMsg, handlerName)
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.logger.Printf("TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n", handlerName, r.Method, r.URL.Path, r.RemoteAddr)
+		s.logger.Printf(formatTraceRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
 		if r.Method == http.MethodGet {
 			w.WriteHeader(http.StatusOK)
 		} else {
@@ -363,7 +365,7 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 		requestedUrlPath := r.URL.Path
 		guid := xid.New()
 		s.logger.Printf("INFO: 'Request ID: %s'\n", guid.String())
-		s.logger.Printf("TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n", handlerName, r.Method, requestedUrlPath, remoteIp)
+		s.logger.Printf(formatTraceRequest, handlerName, r.Method, requestedUrlPath, remoteIp)
 		switch r.Method {
 		case http.MethodGet:
 			if len(strings.TrimSpace(requestedUrlPath)) == 0 || requestedUrlPath == defaultServerPath {
@@ -394,7 +396,7 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 				}
 			}
 		default:
-			s.logger.Printf("%s. Request: %#v", httpErrMethodNotAllow, r)
+			s.logger.Printf(formatErrRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
 			http.Error(w, httpErrMethodNotAllow, http.StatusMethodNotAllowed)
 		}
 	}
@@ -403,14 +405,14 @@ func (s *GoHttpServer) getTimeHandler() http.HandlerFunc {
 	handlerName := "getTimeHandler"
 	s.logger.Printf(initCallMsg, handlerName)
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.logger.Printf("TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n", handlerName, r.Method, r.URL.Path, r.RemoteAddr)
+		s.logger.Printf(formatTraceRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
 		if r.Method == http.MethodGet {
 			now := time.Now()
 			w.Header().Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprintf(w, "{\"time\":\"%s\"}", now.Format(time.RFC3339))
 		} else {
-			s.logger.Printf("%s. Request: %#v", httpErrMethodNotAllow, r)
+			s.logger.Printf(formatErrRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
 			http.Error(w, httpErrMethodNotAllow, http.StatusMethodNotAllowed)
 		}
 	}
@@ -420,14 +422,14 @@ func (s *GoHttpServer) getWaitHandler(secondsToSleep int) http.HandlerFunc {
 	s.logger.Printf(initCallMsg, handlerName)
 	durationOfSleep := time.Duration(secondsToSleep) * time.Second
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.logger.Printf("TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n", handlerName, r.Method, r.URL.Path, r.RemoteAddr)
+		s.logger.Printf(formatTraceRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
 		if r.Method == http.MethodGet {
 			w.Header().Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 			time.Sleep(durationOfSleep) // simulate a delay to be ready
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprintf(w, "{\"waited\":\"%v seconds\"}", secondsToSleep)
 		} else {
-			s.logger.Printf("%s. Request: %#v", httpErrMethodNotAllow, r)
+			s.logger.Printf(formatErrRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
 			http.Error(w, httpErrMethodNotAllow, http.StatusMethodNotAllowed)
 		}
 	}
