@@ -24,7 +24,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o go-info-server .
 
 
 ######## Start a new stage  #######
-FROM alpine:3.15
+FROM alpine:3.16
 
 RUN apk --no-cache add ca-certificates
 
