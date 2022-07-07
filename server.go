@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	VERSION                = "0.3.7"
+	VERSION                = "0.3.8"
 	APP                    = "go-info-server"
 	defaultProtocol        = "http"
 	defaultPort            = 8080
