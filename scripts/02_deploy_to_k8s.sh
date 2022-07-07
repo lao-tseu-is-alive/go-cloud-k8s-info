@@ -1,9 +1,14 @@
 #!/bin/bash
 DOCKER_BIN=docker
 ## Using nerdctl instead of docker on Linux, check: https://docs.rancherdesktop.io/images it's cool & ready to be used
-DOCKER_BIN="nerdctl -n k8s.io"
+DOCKER_BIN="nerdctl"
+# uncomment next line if you are testing with rancher-desktop
+#DOCKER_BIN="nerdctl -n k8s.io"
 # you obviously will need to adjust next line to your own favorite value :-)
-CONTAINER_REGISTRY_ID=laotseu
+#docker pull ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:v0.3.8
+CONTAINER_REGISTRY="ghcr.io/"
+CONTAINER_REGISTRY_USER="lao-tseu-is-alive"
+CONTAINER_REGISTRY_ID="${CONTAINER_REGISTRY}${CONTAINER_REGISTRY_USER}"
 K8s_NAMESPACE=dev
 DEPLOYMENT_TEMPLATE="scripts/k8s-deployment_template.yml"
 K8S_DEPLOYMENT=deployment.yml
@@ -30,16 +35,28 @@ else
 fi
 echo "## USING APP_NAME: \"${APP_NAME}\", APP_VERSION: \"${APP_VERSION}\""
 IMAGE_FILTER="${CONTAINER_REGISTRY_ID}/${APP_NAME}"
-echo "## Checking if image:tag was build  in k8s namespace ${IMAGE_FILTER} tag:${APP_VERSION}"
-JSON_APP=$(${DOCKER_BIN} images --format '{{json .}}' | jq ".| select(.Repository | contains(\"${IMAGE_FILTER}\")) |select(.Tag | contains(\"${APP_VERSION}\"))")
+echo "## Checking if image exist  ${IMAGE_FILTER} tag:v${APP_VERSION}"
+JSON_APP=$(${DOCKER_BIN} images --format '{{json .}}' | jq ".| select(.Repository | contains(\"${IMAGE_FILTER}\")) |select(.Tag | contains(\"v${APP_VERSION}\"))")
 APP_ID=$(echo "${JSON_APP}" | jq '.|.ID')
 # checks whether APP_ID has length equal to zero --> meaning this image:version is not present and was probably not already build
 if [[ -z "${APP_ID}" ]]
 then
-	echo "## 💥💥 ERROR: ${IMAGE_FILTER}:${APP_VERSION} image was not found ! May be you need to build it first ?"
-	exit
+	echo "## 💥💥 ERROR: ${IMAGE_FILTER}:v${APP_VERSION} image was not found locally! will try to pull image from registry"
+	echo "## about to run : ${DOCKER_BIN} pull ${IMAGE_FILTER}:v${APP_VERSION}"
+	if ${DOCKER_BIN} pull "${IMAGE_FILTER}:v${APP_VERSION}" ;
+	then
+	  JSON_APP=$(${DOCKER_BIN} images --format '{{json .}}' | jq ".| select(.Repository | contains(\"${IMAGE_FILTER}\")) |select(.Tag | contains(\"v${APP_VERSION}\"))")
+	  APP_ID=$(echo "${JSON_APP}" | jq '.|.ID')
+	  echo "## ✓🚀 OK: \"${IMAGE_FILTER}:v${APP_VERSION}\" image was pulled successfully will prepare the deployment..."
+    echo "${JSON_APP}" | jq '.'
+	else
+	  echo "## 💥💥 ERROR: ${IMAGE_FILTER}:v${APP_VERSION} image was not found in remote registry ! "
+	  echo "## 💥💥 check if your image exist in https://github.com/${CONTAINER_REGISTRY_USER}/${APP_NAME}/pkgs/container/${APP_NAME}"
+	  echo "## 💥💥 may be you should tag a new release an wait for github actions to build it ?"
+	  exit
+	fi
 else
-  echo "## ✓🚀 OK: \"${IMAGE_FILTER}:${APP_VERSION}\" image was found in the k8s.io namespace will prepare the deployment..."
+  echo "## ✓🚀 OK: \"${IMAGE_FILTER}:${APP_VERSION}\" image was found locally will prepare the deployment..."
   echo "${JSON_APP}" | jq '.'
 fi
 echo "## Generating a deployment based on template : ${DEPLOYMENT_TEMPLATE}"

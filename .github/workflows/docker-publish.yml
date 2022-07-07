@@ -97,12 +97,12 @@ jobs:
 
       # Sign the resulting Docker image digest except on PRs.
       # https://github.com/sigstore/cosign-installer
-      - name: Sign the published image with cosign key in github.secrets
-        if: ${{ github.event_name != 'pull_request' }}
-        run: |
-          cosign sign --key env://COSIGN_PRIVATE_KEY ${TAGS}
-        env:
-          TAGS: ${{ steps.meta.outputs.tags }}
-          COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+#      - name: Sign the published image with cosign key in github.secrets
+#        if: ${{ github.event_name != 'pull_request' }}
+#        run: |
+#          cosign sign --key env://COSIGN_PRIVATE_KEY ${TAGS}
+#        env:
+#          TAGS: ${{ steps.meta.outputs.tags }}
+#          COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
+#          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         #run: cosign sign ${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
