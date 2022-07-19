@@ -43,8 +43,8 @@ spec:
         app: go-cloud-k8s-info
     spec:                        # Spec for the container which will run in the Pod
       securityContext:           # https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-        runAsUser: 10111           # using the user 'gouser' created in Dockerfile in the Alpine image
-        runAsGroup: 10111          # using the group 'gouser' created in Dockerfile in the Alpine image
+        runAsUser: 10112           # using the user 'gouser' created in Dockerfile in the Alpine image
+        runAsGroup: 10112          # using the group 'gouser' created in Dockerfile in the Alpine image
         fsGroup: 100             # by adding fsGroup field, all processes of the container are also part
                                  # of the supplementary group ID 100 (users).
         supplementalGroups:
@@ -56,8 +56,8 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true
-          runAsUser: 10111           # using the user 'gouser' created in Dockerfile in the Alpine image
-          runAsGroup: 10111          # using the group 'gouser' created in Dockerfile in the Alpine image
+          runAsUser: 10112           # can be anything  not necessary to use the user 'gouser' created in Dockerfile in the Alpine image
+          runAsGroup: 10112          # using the group 'gouser' created in Dockerfile in the Alpine image
           capabilities:
             drop:
               - 'ALL'

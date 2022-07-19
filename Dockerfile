@@ -24,13 +24,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o go-info-server .
 
 
 ######## Start a new stage  #######
-FROM alpine:3.16
-
-RUN apk --no-cache add ca-certificates
-
-RUN addgroup -g 10111 -S gouser && adduser -S -G gouser -H -u 10111 gouser
-USER gouser
-
+FROM scratch
+USER 1221:1221
 WORKDIR /goapp
 
 # Copy the Pre-built binary file from the previous stage
