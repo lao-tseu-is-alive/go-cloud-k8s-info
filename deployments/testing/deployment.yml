@@ -1,7 +1,7 @@
 ---
 ### TEMPLATE FOR A SERVICE AND DEPLOYMENT ON KUBERNETES just substitute the next keywords with your own values
 ### go-cloud-k8s-info     : the name of your application or container image
-### v0.3.9  : the version of the app image to deploy
+### v0.4.1  : the version of the app image to deploy
 ### ghcr.io/lao-tseu-is-alive  : the prefix to your images in your container registry
 
 apiVersion: v1
@@ -43,21 +43,21 @@ spec:
         app: go-cloud-k8s-info
     spec:                        # Spec for the container which will run in the Pod
       securityContext:           # https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-        runAsUser: 10112           # using the user 'gouser' created in Dockerfile in the Alpine image
-        runAsGroup: 10112          # using the group 'gouser' created in Dockerfile in the Alpine image
+        runAsUser: 10222           # using a non privileged user
+        runAsGroup: 10222          # using the group 'gouser' created in Dockerfile in the Alpine image
         fsGroup: 100             # by adding fsGroup field, all processes of the container are also part
                                  # of the supplementary group ID 100 (users).
         supplementalGroups:
           - 100
       containers:
       - name: go-cloud-k8s-info
-        image: ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:v0.3.9
+        image: ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:v0.4.1
         imagePullPolicy: IfNotPresent
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true
-          runAsUser: 10112           # can be anything  not necessary to use the user 'gouser' created in Dockerfile in the Alpine image
-          runAsGroup: 10112          # using the group 'gouser' created in Dockerfile in the Alpine image
+          runAsUser: 10222           # using the user 'gouser' created in Dockerfile in the Alpine image
+          runAsGroup: 10222          # using the group 'gouser' created in Dockerfile in the Alpine image
           capabilities:
             drop:
               - 'ALL'

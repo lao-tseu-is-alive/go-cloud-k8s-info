@@ -25,6 +25,11 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o go-info-server .
 
 ######## Start a new stage  #######
 FROM scratch
+# to comply with security best practices
+# Running containers with 'root' user can lead to a container escape situation (the default with Docker...).
+# It is a best practice to run containers as non-root users
+# https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+# https://docs.docker.com/engine/reference/builder/#user
 USER 1221:1221
 WORKDIR /goapp
 
