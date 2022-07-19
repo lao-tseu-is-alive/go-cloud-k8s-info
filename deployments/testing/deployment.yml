@@ -21,6 +21,8 @@ spec:
   # It is possible to run multiple Services on the same node, as long as they use different ports.
   # in case you are using a 'real' k3s cluster with multiple nodes consider using metalLB instead
   externalTrafficPolicy: Local
+  loadBalancerSourceRanges:
+    - 192.168.0.0/16
   ports:                         # Take incoming HTTP requests on this port (exposed) and forward them to the targetPort of container
     - name: http
       port: 8000
@@ -52,7 +54,7 @@ spec:
       containers:
       - name: go-cloud-k8s-info
         image: ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:v0.4.1
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true
