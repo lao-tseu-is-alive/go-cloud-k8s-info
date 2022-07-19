@@ -214,7 +214,7 @@ Visit http://127.0.0.1:9000/dashboard/ in your browser to view the Traefik dashb
 
 
 ### From scratch vs From alpine : 
-Actual image size (with FROM alpine:3.15)  is 13.3 MiB
+Actual image size (with FROM alpine:3.16)  is 13.6 MiB
 by building the image FROM scratch the image size goes just half size 6.0MB
 
 Another important thing is that there is **NO WAY to go "inside" this container with an interactive shell**,
@@ -826,17 +826,4 @@ So maybe let's download the kubectl command
 
 **So again, YES maybe it is safer to use container images that are build from scratch...**
 
-_if you want to build manually your from scratch container  :_
-```bash
-cd DockerfileFromScratch
-cp ../go.* .
-cp ../*.go .
-nerdctl -n k8s.io build -t go-info-server-from-scratch .
-nerdctl -n k8s.io tag go-info-server-from-scratch go-info-server-from-scratch:0.1.1
-nerdctl -n k8s.io images | grep go-info
-kubectl apply -f k8s-deployment-from-scratch.yml 
-curl http://localhost:8000
-
-```
-
-
+since version tag 0.4.1 this is the default in this project.   
