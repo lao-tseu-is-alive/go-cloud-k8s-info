@@ -32,7 +32,7 @@ else
 	echo "## ENV variable APP_NAME is defined to : ${APP_NAME} . So we will use this one !"
 fi
 echo "## USING APP_NAME: \"${APP_NAME}\", APP_VERSION: \"${APP_VERSION}\""
-K8s_NAMESPACE="testing-$APP_NAME"
+K8s_NAMESPACE="test-$APP_NAME"
 IMAGE_FILTER="${CONTAINER_REGISTRY_ID}/${APP_NAME}"
 echo "## Checking if image exist  ${IMAGE_FILTER} tag:v${APP_VERSION}"
 JSON_APP=$(${DOCKER_BIN} images --format '{{json .}}' | jq ".| select(.Repository | contains(\"${IMAGE_FILTER}\")) |select(.Tag | contains(\"v${APP_VERSION}\"))")
@@ -111,6 +111,8 @@ then
   curl -s http://go-info-server.rancher.localhost:8000 | jq
   echo "## you can later remove this deployment by running :"
   echo "kubectl delete -f ${DEPLOYMENT_DIRECTORY}/${K8S_DEPLOYMENT} --namespace=${K8s_NAMESPACE}"
+  echo "## in case you have a pending in external ip for the get service"
+  echo "## check if there isn't an old daemonsets  with : kubectl  -n kube-system get daemonsets.apps "
   # echo "Pods are allocated a private IP address by default and cannot be reached outside of the cluster unless you have a corresponding service."
   # echo "You can also use the kubectl port-forward command to map a local port to a port inside the pod like this : (ctrl+c to terminate)"
   # kubectl port-forward go-info-server-766947b78b-64f7j 8080:8080
