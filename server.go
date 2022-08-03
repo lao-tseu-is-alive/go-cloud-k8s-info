@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	VERSION                = "0.4.1"
+	VERSION                = "0.4.2"
 	APP                    = "go-cloud-k8s-info"
 	defaultProtocol        = "http"
 	defaultPort            = 8080
@@ -65,8 +65,8 @@ type RuntimeInfo struct {
 	OsReleaseVersion   string              `json:"os_release_version"`    // Linux release Version or _UNKNOWN_
 	OsReleaseVersionId string              `json:"os_release_version_id"` // Linux release VersionId or _UNKNOWN_
 	NumCPU             string              `json:"num_cpu"`               // number of cpu
-	Uptime             string              `json:"uptime"`                // tells how long this service was started based on an internal varaible
-	UptimeOs           string              `json:"uptime_os"`             // tells how long this service was started based on an internal varaible
+	Uptime             string              `json:"uptime"`                // tells how long this service was started based on an internal variable
+	UptimeOs           string              `json:"uptime_os"`             // tells how long system was started based on /proc/uptime
 	EnvVars            []string            `json:"env_vars"`              // environment variables
 	Headers            map[string][]string `json:"headers"`               // received headers
 }
@@ -85,6 +85,16 @@ type OsInfo struct {
 	Name      string `json:"name"`
 	Version   string `json:"version"`
 	VersionId string `json:"versionId"`
+}
+
+func GetOsUptime() (string, error) {
+	uptimeResult := defaultUnknown
+	content, err := ioutil.ReadFile("/proc/uptime")
+	if err != nil {
+		return uptimeResult, err
+	}
+	uptimeResult = string(content)
+	return uptimeResult, nil
 }
 
 func GetOsInfo() (*OsInfo, ErrorConfig) {
@@ -338,6 +348,11 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 	}
 	// fmt.Printf("%+v\n", osReleaseInfo)
 
+	uptimeOS, err := GetOsUptime()
+	if err != nil {
+		s.logger.Printf("💥💥 ERROR: 'GetOsUptime() returned an error : %+#v'", err)
+	}
+
 	data := RuntimeInfo{
 		Hostname:           hostName,
 		Pid:                os.Getpid(),
@@ -357,6 +372,7 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 		OsReleaseVersionId: osReleaseInfo.VersionId,
 		NumCPU:             strconv.FormatInt(int64(runtime.NumCPU()), 10),
 		Uptime:             fmt.Sprintf("%s", time.Since(s.startTime)),
+		UptimeOs:           uptimeOS,
 		EnvVars:            os.Environ(),
 		Headers:            map[string][]string{},
 	}
@@ -377,6 +393,11 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 				data.RemoteAddr = remoteIp
 				data.Headers = r.Header
 				data.Uptime = fmt.Sprintf("%s", time.Since(s.startTime))
+				uptimeOS, err := GetOsUptime()
+				if err != nil {
+					s.logger.Printf("💥💥 ERROR: 'GetOsUptime() returned an error : %+#v'", err)
+				}
+				data.UptimeOs = uptimeOS
 				data.RequestId = guid.String()
 				s.jsonResponse(w, r, data)
 				/*n, err := fmt.Fprintf(w, getHtmlPage(defaultMessage))

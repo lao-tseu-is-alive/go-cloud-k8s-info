@@ -4,12 +4,10 @@ DOCKER_BIN=docker
 DOCKER_BIN="nerdctl"
 # uncomment next line if you are testing with rancher-desktop
 #DOCKER_BIN="nerdctl -n k8s.io"
-# you obviously will need to adjust next line to your own favorite value :-)
-#docker pull ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:v0.3.8
+# you obviously will need to adjust next lines to your own favorite value :-)
 CONTAINER_REGISTRY="ghcr.io/"
 CONTAINER_REGISTRY_USER="lao-tseu-is-alive"
 CONTAINER_REGISTRY_ID="${CONTAINER_REGISTRY}${CONTAINER_REGISTRY_USER}"
-K8s_NAMESPACE=testing
 DEPLOYMENT_TEMPLATE="scripts/k8s-deployment_template.yml"
 K8S_DEPLOYMENT=deployment.yml
 echo "## Checking if ENV variable APP_NAME is already defined..."
@@ -34,6 +32,7 @@ else
 	echo "## ENV variable APP_NAME is defined to : ${APP_NAME} . So we will use this one !"
 fi
 echo "## USING APP_NAME: \"${APP_NAME}\", APP_VERSION: \"${APP_VERSION}\""
+K8s_NAMESPACE="testing-$APP_NAME"
 IMAGE_FILTER="${CONTAINER_REGISTRY_ID}/${APP_NAME}"
 echo "## Checking if image exist  ${IMAGE_FILTER} tag:v${APP_VERSION}"
 JSON_APP=$(${DOCKER_BIN} images --format '{{json .}}' | jq ".| select(.Repository | contains(\"${IMAGE_FILTER}\")) |select(.Tag | contains(\"v${APP_VERSION}\"))")
@@ -64,13 +63,13 @@ DEPLOYMENT_DIRECTORY="deployments/${K8s_NAMESPACE}"
 echo "## will store the deployment in directory    : ${DEPLOYMENT_DIRECTORY}"
 mkdir "${DEPLOYMENT_DIRECTORY}"
 echo "## will substitute APP_NAME : ${APP_NAME}"
-sed s/APP_NAME/"${APP_NAME}"/g  ${DEPLOYMENT_TEMPLATE} > ${DEPLOYMENT_DIRECTORY}/${K8S_DEPLOYMENT}
+sed s/APP_NAME/"${APP_NAME}"/g  ${DEPLOYMENT_TEMPLATE} > "${DEPLOYMENT_DIRECTORY}"/${K8S_DEPLOYMENT}
 echo "## will substitute APP_VERSION : v${APP_VERSION}"
-sed -i s/APP_VERSION/"v${APP_VERSION}"/g  ${DEPLOYMENT_DIRECTORY}/${K8S_DEPLOYMENT}
+sed -i s/APP_VERSION/"v${APP_VERSION}"/g  "${DEPLOYMENT_DIRECTORY}"/${K8S_DEPLOYMENT}
 echo "## will substitute GO_CONTAINER_REGISTRY_PREFIX : ${CONTAINER_REGISTRY_ID}"
-sed -i "s|GO_CONTAINER_REGISTRY_PREFIX|${CONTAINER_REGISTRY_ID}|g"  ${DEPLOYMENT_DIRECTORY}/${K8S_DEPLOYMENT}
+sed -i "s|GO_CONTAINER_REGISTRY_PREFIX|${CONTAINER_REGISTRY_ID}|g"  "${DEPLOYMENT_DIRECTORY}"/${K8S_DEPLOYMENT}
 echo "## Checking result of substitution in image name :"
-yq  ".spec.template.spec.containers[0].image" ${DEPLOYMENT_DIRECTORY}/${K8S_DEPLOYMENT}
+yq  ".spec.template.spec.containers[0].image" "${DEPLOYMENT_DIRECTORY}"/${K8S_DEPLOYMENT}
 #yq -i ".spec.template.spec.containers[0].image=\"${IMAGE_FILTER}:${APP_VERSION}\"" deployments/dev/deployment.yml
 echo "## Checking for vulnerabilities with trivy"
 cd "${DEPLOYMENT_DIRECTORY}" || exit
@@ -81,15 +80,15 @@ then
   cd "$OLDPWD" || exit
   # https://kubernetes.io/docs/tasks/access-application-cluster/list-all-running-container-images/
   # shellcheck disable=SC2021
-  K8S_PODS_IMAGES=$(kubectl get pods -n ${K8s_NAMESPACE} -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n'|sort | uniq)
+  K8S_PODS_IMAGES=$(kubectl get pods -n "${K8s_NAMESPACE}" -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n'|sort | uniq)
   if [[ $K8S_PODS_IMAGES =~ ${IMAGE_FILTER}:v${APP_VERSION} ]];
   then
     echo "## 💥💥 ERROR: ${IMAGE_FILTER}:v${APP_VERSION} image was already deployed ! "
-     kubectl get pods -n ${K8s_NAMESPACE} -l app=${APP_NAME}
+     kubectl get pods -n "${K8s_NAMESPACE}" -l app="${APP_NAME}"
   fi
   #K8S_APP=$(kubectl get deployments --namespace=${K8s_NAMESPACE}" -o json |jq '.items[]?.spec.template.spec.containers[]?.image')
   echo "## Deploying ${K8S_DEPLOYMENT} in the K8S cluster in namespace ${K8s_NAMESPACE}"
-  kubectl apply -f ${DEPLOYMENT_DIRECTORY}/${K8S_DEPLOYMENT} --namespace=${K8s_NAMESPACE}
+  kubectl apply -f "${DEPLOYMENT_DIRECTORY}"/${K8S_DEPLOYMENT} --namespace="${K8s_NAMESPACE}"
   # Check deployment rollout status every 5 seconds (max 1 minutes) until complete.
   ATTEMPTS=0
   ROLLOUT_STATUS_CMD="kubectl rollout status deployment ${APP_NAME} --namespace=${K8s_NAMESPACE}"
@@ -100,9 +99,9 @@ then
     sleep 5
   done
   echo "## Listing  pods in the cluster in namespace ${K8s_NAMESPACE}"
-  kubectl get pods -o wide --namespace=${K8s_NAMESPACE}
+  kubectl get pods -o wide --namespace="${K8s_NAMESPACE}"
   echo "## Listing  services in the cluster "
-  kubectl get service -o wide --namespace=${K8s_NAMESPACE}
+  kubectl get service -o wide --namespace="${K8s_NAMESPACE}"
   #echo "## Listing  ingress in the cluster "
   #kubectl get ingress -o wide
   sleep 2
@@ -110,6 +109,8 @@ then
   #curl http://localhost:8000 | jq
   echo "## Running a curl on new service at cluster http://go-info-server.rancher.localhost:8000"
   curl -s http://go-info-server.rancher.localhost:8000 | jq
+  echo "## you can later remove this deployment by running :"
+  echo "kubectl delete -f ${DEPLOYMENT_DIRECTORY}/${K8S_DEPLOYMENT} --namespace=${K8s_NAMESPACE}"
   # echo "Pods are allocated a private IP address by default and cannot be reached outside of the cluster unless you have a corresponding service."
   # echo "You can also use the kubectl port-forward command to map a local port to a port inside the pod like this : (ctrl+c to terminate)"
   # kubectl port-forward go-info-server-766947b78b-64f7j 8080:8080
