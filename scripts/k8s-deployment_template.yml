@@ -67,11 +67,11 @@ spec:
         ports:
           - containerPort: 8000  # Should match the PORT env variable above  that the Go application listens on
         resources:
-          limits:
-            cpu: 1000m
+          limits:            # resource limit imposed to the pod, the container cannot utilize more res than specified
+            cpu: 1000m       # 1000 millicpu or millicores 1 or 100% of a CPU core of a running node
             memory: 128Mi
-          requests:
-            cpu: 100m
+          requests:          # explicit request of the minimum amount of resources the pod need
+            cpu: 100m        # 100 millicpu or millicores 0.1 or 10% of a CPU core of a running node
             memory: 32Mi
         livenessProbe:           # To check the health of the Pod
           httpGet:
