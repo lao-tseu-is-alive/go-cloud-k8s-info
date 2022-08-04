@@ -252,6 +252,9 @@ To verify, Inside the above container shell just run:**
     
     wget -O - --no-check-certificate --header "Authorization: Bearer ${TOKEN}"  ${APISERVER}/api/v1
 
+    # or with curl
+    curl -s -k -H "Authorization: Bearer ${TOKEN}" -H 'Accept: application/json' ${APISERVER}/api/v1
+
 ```json
 {
   "kind": "APIResourceList",

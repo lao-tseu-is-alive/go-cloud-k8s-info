@@ -107,12 +107,13 @@ then
   sleep 2
   #echo "## Running a curl on new service at cluster http://localhost:8000"
   #curl http://localhost:8000 | jq
-  echo "## Running a curl on new service at cluster http://go-info-server.rancher.localhost:8000"
+  echo "## Running a curl on your service at : http://go-info-server.rancher.localhost:8000"
   curl -s http://go-info-server.rancher.localhost:8000 | jq
   echo "## you can later remove this deployment by running :"
   echo "kubectl delete -f ${DEPLOYMENT_DIRECTORY}/${K8S_DEPLOYMENT} --namespace=${K8s_NAMESPACE}"
-  echo "## in case you have a pending in external ip for the get service"
+  echo "## in case you have a pending in external ip for the get service it may be because a old daemonset is stil "
   echo "## check if there isn't an old daemonsets  with : kubectl  -n kube-system get daemonsets.apps "
+  echo "## https://rancher.com/docs/k3s/latest/en/networking/#how-the-service-lb-works"
   # echo "Pods are allocated a private IP address by default and cannot be reached outside of the cluster unless you have a corresponding service."
   # echo "You can also use the kubectl port-forward command to map a local port to a port inside the pod like this : (ctrl+c to terminate)"
   # kubectl port-forward go-info-server-766947b78b-64f7j 8080:8080
