@@ -1,0 +1,55 @@
+
+cr.l5d.io/linkerd/policy-controller:stable-2.11.4 (debian 11.4)
+===============================================================
+Total: 14 (UNKNOWN: 0, LOW: 11, MEDIUM: 0, HIGH: 3, CRITICAL: 0)
+
+┌───────────┬──────────────────┬──────────┬───────────────────┬───────────────┬─────────────────────────────────────────────────────────────┐
+│  Library  │  Vulnerability   │ Severity │ Installed Version │ Fixed Version │                            Title                            │
+├───────────┼──────────────────┼──────────┼───────────────────┼───────────────┼─────────────────────────────────────────────────────────────┤
+│ libc6     │ CVE-2021-3999    │ HIGH     │ 2.31-13+deb11u3   │               │ glibc: Off-by-one buffer overflow/underflow in getcwd()     │
+│           │                  │          │                   │               │ https://avd.aquasec.com/nvd/cve-2021-3999                   │
+│           ├──────────────────┼──────────┤                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│           │ CVE-2010-4756    │ LOW      │                   │               │ glibc: glob implementation can cause excessive CPU and      │
+│           │                  │          │                   │               │ memory consumption due to...                                │
+│           │                  │          │                   │               │ https://avd.aquasec.com/nvd/cve-2010-4756                   │
+│           ├──────────────────┤          │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│           │ CVE-2018-20796   │          │                   │               │ glibc: uncontrolled recursion in function                   │
+│           │                  │          │                   │               │ check_dst_limits_calc_pos_1 in posix/regexec.c              │
+│           │                  │          │                   │               │ https://avd.aquasec.com/nvd/cve-2018-20796                  │
+│           ├──────────────────┤          │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│           │ CVE-2019-1010022 │          │                   │               │ glibc: stack guard protection bypass                        │
+│           │                  │          │                   │               │ https://avd.aquasec.com/nvd/cve-2019-1010022                │
+│           ├──────────────────┤          │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│           │ CVE-2019-1010023 │          │                   │               │ glibc: running ldd on malicious ELF leads to code execution │
+│           │                  │          │                   │               │ because of...                                               │
+│           │                  │          │                   │               │ https://avd.aquasec.com/nvd/cve-2019-1010023                │
+│           ├──────────────────┤          │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│           │ CVE-2019-1010024 │          │                   │               │ glibc: ASLR bypass using cache of thread stack and heap     │
+│           │                  │          │                   │               │ https://avd.aquasec.com/nvd/cve-2019-1010024                │
+│           ├──────────────────┤          │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│           │ CVE-2019-1010025 │          │                   │               │ glibc: information disclosure of heap addresses of          │
+│           │                  │          │                   │               │ pthread_created thread                                      │
+│           │                  │          │                   │               │ https://avd.aquasec.com/nvd/cve-2019-1010025                │
+│           ├──────────────────┤          │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│           │ CVE-2019-9192    │          │                   │               │ glibc: uncontrolled recursion in function                   │
+│           │                  │          │                   │               │ check_dst_limits_calc_pos_1 in posix/regexec.c              │
+│           │                  │          │                   │               │ https://avd.aquasec.com/nvd/cve-2019-9192                   │
+├───────────┼──────────────────┼──────────┼───────────────────┼───────────────┼─────────────────────────────────────────────────────────────┤
+│ libssl1.1 │ CVE-2022-2097    │ HIGH     │ 1.1.1n-0+deb11u3  │               │ openssl: AES OCB fails to encrypt some bytes                │
+│           │                  │          │                   │               │ https://avd.aquasec.com/nvd/cve-2022-2097                   │
+│           ├──────────────────┼──────────┤                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│           │ CVE-2007-6755    │ LOW      │                   │               │ Dual_EC_DRBG: weak pseudo random number generator           │
+│           │                  │          │                   │               │ https://avd.aquasec.com/nvd/cve-2007-6755                   │
+│           ├──────────────────┤          │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│           │ CVE-2010-0928    │          │                   │               │ openssl: RSA authentication weakness                        │
+│           │                  │          │                   │               │ https://avd.aquasec.com/nvd/cve-2010-0928                   │
+├───────────┼──────────────────┼──────────┤                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│ openssl   │ CVE-2022-2097    │ HIGH     │                   │               │ openssl: AES OCB fails to encrypt some bytes                │
+│           │                  │          │                   │               │ https://avd.aquasec.com/nvd/cve-2022-2097                   │
+│           ├──────────────────┼──────────┤                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│           │ CVE-2007-6755    │ LOW      │                   │               │ Dual_EC_DRBG: weak pseudo random number generator           │
+│           │                  │          │                   │               │ https://avd.aquasec.com/nvd/cve-2007-6755                   │
+│           ├──────────────────┤          │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│           │ CVE-2010-0928    │          │                   │               │ openssl: RSA authentication weakness                        │
+│           │                  │          │                   │               │ https://avd.aquasec.com/nvd/cve-2010-0928                   │
+└───────────┴──────────────────┴──────────┴───────────────────┴───────────────┴─────────────────────────────────────────────────────────────┘

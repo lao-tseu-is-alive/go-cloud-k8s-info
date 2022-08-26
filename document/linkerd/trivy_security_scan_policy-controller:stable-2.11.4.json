@@ -1,0 +1,710 @@
+{
+  "SchemaVersion": 2,
+  "ArtifactName": "cr.l5d.io/linkerd/policy-controller:stable-2.11.4",
+  "ArtifactType": "container_image",
+  "Metadata": {
+    "OS": {
+      "Family": "debian",
+      "Name": "11.4"
+    },
+    "ImageID": "sha256:f5a4a96a134f0b5df64069144cb089717789040749dfb2b412ec2411b75aaad7",
+    "DiffIDs": [
+      "sha256:8d7366c22fd8219bfcfb61ed28457854c80e310b0d736b67861b2ea7fcd77843",
+      "sha256:a93413564615e6428c3555f41bbfc999708dea3d99c7994e46a204c5da54b2a9",
+      "sha256:e83d4114481dc897d49d5a9a8b68bf71c4f08f1a5c1adff44603c56b958fed53",
+      "sha256:9ab84d650dda4030c857b3dbffc41bd3a09f2d6b9dfa9b6e53a67a9e18a40e0e"
+    ],
+    "RepoTags": [
+      "cr.l5d.io/linkerd/policy-controller:stable-2.11.4"
+    ],
+    "RepoDigests": [
+      "cr.l5d.io/linkerd/policy-controller@sha256:1b46a43ded8189a41db5887be1fdf46b5f983483cf01a4e042e8b719b1c2b9ec"
+    ],
+    "ImageConfig": {
+      "architecture": "amd64",
+      "author": "Bazel",
+      "created": "2022-07-13T20:19:19.542048273Z",
+      "history": [
+        {
+          "author": "Bazel",
+          "created": "1970-01-01T00:00:00Z",
+          "created_by": "bazel build ..."
+        },
+        {
+          "author": "Bazel",
+          "created": "1970-01-01T00:00:00Z",
+          "created_by": "bazel build ..."
+        },
+        {
+          "author": "Bazel",
+          "created": "1970-01-01T00:00:00Z",
+          "created_by": "bazel build ..."
+        },
+        {
+          "created": "2022-07-13T20:19:19.542048273Z",
+          "created_by": "COPY /tmp/linkerd-policy-controller /bin/ # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2022-07-13T20:19:19.542048273Z",
+          "created_by": "ENTRYPOINT [\"/bin/linkerd-policy-controller\"]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        }
+      ],
+      "os": "linux",
+      "rootfs": {
+        "type": "layers",
+        "diff_ids": [
+          "sha256:8d7366c22fd8219bfcfb61ed28457854c80e310b0d736b67861b2ea7fcd77843",
+          "sha256:a93413564615e6428c3555f41bbfc999708dea3d99c7994e46a204c5da54b2a9",
+          "sha256:e83d4114481dc897d49d5a9a8b68bf71c4f08f1a5c1adff44603c56b958fed53",
+          "sha256:9ab84d650dda4030c857b3dbffc41bd3a09f2d6b9dfa9b6e53a67a9e18a40e0e"
+        ]
+      },
+      "config": {
+        "Entrypoint": [
+          "/bin/linkerd-policy-controller"
+        ],
+        "Env": [
+          "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt"
+        ],
+        "User": "0",
+        "WorkingDir": "/"
+      }
+    }
+  },
+  "Results": [
+    {
+      "Target": "cr.l5d.io/linkerd/policy-controller:stable-2.11.4 (debian 11.4)",
+      "Class": "os-pkgs",
+      "Type": "debian",
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2021-3999",
+          "PkgName": "libc6",
+          "InstalledVersion": "2.31-13+deb11u3",
+          "Layer": {
+            "Digest": "sha256:d7fbeaa2da3f6cfab1f394b047209b702fd611e17c7ea79027900b833ad2a771",
+            "DiffID": "sha256:a93413564615e6428c3555f41bbfc999708dea3d99c7994e46a204c5da54b2a9"
+          },
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2021-3999",
+          "DataSource": {
+            "ID": "debian",
+            "Name": "Debian Security Tracker",
+            "URL": "https://salsa.debian.org/security-tracker-team/security-tracker"
+          },
+          "Title": "glibc: Off-by-one buffer overflow/underflow in getcwd()",
+          "Description": "A flaw was found in glibc. An off-by-one buffer overflow and underflow in getcwd() may lead to memory corruption when the size of the buffer is exactly 1. A local attacker who can control the input buffer and size passed to getcwd() in a setuid program could use this flaw to potentially execute arbitrary code and escalate their privileges on the system.",
+          "Severity": "HIGH",
+          "CVSS": {
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H",
+              "V3Score": 7.4
+            }
+          },
+          "References": [
+            "https://access.redhat.com/hydra/rest/securitydata/cve/CVE-2021-3999.json",
+            "https://access.redhat.com/security/cve/CVE-2021-3999",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2024637",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3999",
+            "https://linux.oracle.com/cve/CVE-2021-3999.html",
+            "https://linux.oracle.com/errata/ELSA-2022-9234.html",
+            "https://security-tracker.debian.org/tracker/CVE-2021-3999",
+            "https://sourceware.org/bugzilla/show_bug.cgi?id=28769",
+            "https://sourceware.org/git/gitweb.cgi?p=glibc.git;h=23e0e8f5f1fb5ed150253d986ecccdc90c2dcd5e",
+            "https://ubuntu.com/security/notices/USN-5310-1",
+            "https://ubuntu.com/security/notices/USN-5310-2",
+            "https://www.openwall.com/lists/oss-security/2022/01/24/4"
+          ],
+          "PublishedDate": "2022-08-24T16:15:00Z",
+          "LastModifiedDate": "2022-08-24T16:24:00Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2010-4756",
+          "PkgName": "libc6",
+          "InstalledVersion": "2.31-13+deb11u3",
+          "Layer": {
+            "Digest": "sha256:d7fbeaa2da3f6cfab1f394b047209b702fd611e17c7ea79027900b833ad2a771",
+            "DiffID": "sha256:a93413564615e6428c3555f41bbfc999708dea3d99c7994e46a204c5da54b2a9"
+          },
+          "SeveritySource": "debian",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2010-4756",
+          "DataSource": {
+            "ID": "debian",
+            "Name": "Debian Security Tracker",
+            "URL": "https://salsa.debian.org/security-tracker-team/security-tracker"
+          },
+          "Title": "glibc: glob implementation can cause excessive CPU and memory consumption due to crafted glob expressions",
+          "Description": "The glob implementation in the GNU C Library (aka glibc or libc6) allows remote authenticated users to cause a denial of service (CPU and memory consumption) via crafted glob expressions that do not match any pathnames, as demonstrated by glob expressions in STAT commands to an FTP daemon, a different vulnerability than CVE-2010-2632.",
+          "Severity": "LOW",
+          "CweIDs": [
+            "CWE-399"
+          ],
+          "CVSS": {
+            "nvd": {
+              "V2Vector": "AV:N/AC:L/Au:S/C:N/I:N/A:P",
+              "V2Score": 4
+            },
+            "redhat": {
+              "V2Vector": "AV:N/AC:L/Au:N/C:N/I:N/A:P",
+              "V2Score": 5
+            }
+          },
+          "References": [
+            "http://cxib.net/stuff/glob-0day.c",
+            "http://securityreason.com/achievement_securityalert/89",
+            "http://securityreason.com/exploitalert/9223",
+            "https://access.redhat.com/security/cve/CVE-2010-4756",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=681681",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=CVE-2010-4756",
+            "https://nvd.nist.gov/vuln/detail/CVE-2010-4756"
+          ],
+          "PublishedDate": "2011-03-02T20:00:00Z",
+          "LastModifiedDate": "2021-09-01T12:15:00Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2018-20796",
+          "PkgName": "libc6",
+          "InstalledVersion": "2.31-13+deb11u3",
+          "Layer": {
+            "Digest": "sha256:d7fbeaa2da3f6cfab1f394b047209b702fd611e17c7ea79027900b833ad2a771",
+            "DiffID": "sha256:a93413564615e6428c3555f41bbfc999708dea3d99c7994e46a204c5da54b2a9"
+          },
+          "SeveritySource": "debian",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2018-20796",
+          "DataSource": {
+            "ID": "debian",
+            "Name": "Debian Security Tracker",
+            "URL": "https://salsa.debian.org/security-tracker-team/security-tracker"
+          },
+          "Title": "glibc: uncontrolled recursion in function check_dst_limits_calc_pos_1 in posix/regexec.c",
+          "Description": "In the GNU C Library (aka glibc or libc6) through 2.29, check_dst_limits_calc_pos_1 in posix/regexec.c has Uncontrolled Recursion, as demonstrated by '(\\227|)(\\\\1\\\\1|t1|\\\\\\2537)+' in grep.",
+          "Severity": "LOW",
+          "CweIDs": [
+            "CWE-674"
+          ],
+          "CVSS": {
+            "nvd": {
+              "V2Vector": "AV:N/AC:L/Au:N/C:N/I:N/A:P",
+              "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V2Score": 5,
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+              "V3Score": 5.3
+            }
+          },
+          "References": [
+            "http://www.securityfocus.com/bid/107160",
+            "https://access.redhat.com/security/cve/CVE-2018-20796",
+            "https://debbugs.gnu.org/cgi/bugreport.cgi?bug=34141",
+            "https://lists.gnu.org/archive/html/bug-gnulib/2019-01/msg00108.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2018-20796",
+            "https://security.netapp.com/advisory/ntap-20190315-0002/",
+            "https://support.f5.com/csp/article/K26346590?utm_source=f5support\u0026amp;utm_medium=RSS"
+          ],
+          "PublishedDate": "2019-02-26T02:29:00Z",
+          "LastModifiedDate": "2019-11-05T21:15:00Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2019-1010022",
+          "PkgName": "libc6",
+          "InstalledVersion": "2.31-13+deb11u3",
+          "Layer": {
+            "Digest": "sha256:d7fbeaa2da3f6cfab1f394b047209b702fd611e17c7ea79027900b833ad2a771",
+            "DiffID": "sha256:a93413564615e6428c3555f41bbfc999708dea3d99c7994e46a204c5da54b2a9"
+          },
+          "SeveritySource": "debian",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2019-1010022",
+          "DataSource": {
+            "ID": "debian",
+            "Name": "Debian Security Tracker",
+            "URL": "https://salsa.debian.org/security-tracker-team/security-tracker"
+          },
+          "Title": "glibc: stack guard protection bypass",
+          "Description": "** DISPUTED ** GNU Libc current is affected by: Mitigation bypass. The impact is: Attacker may bypass stack guard protection. The component is: nptl. The attack vector is: Exploit stack buffer overflow vulnerability and use this bypass vulnerability to bypass stack guard. NOTE: Upstream comments indicate \"this is being treated as a non-security bug and no real threat.\"",
+          "Severity": "LOW",
+          "CweIDs": [
+            "CWE-119"
+          ],
+          "CVSS": {
+            "nvd": {
+              "V2Vector": "AV:N/AC:L/Au:N/C:P/I:P/A:P",
+              "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+              "V2Score": 7.5,
+              "V3Score": 9.8
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2019-1010022",
+            "https://security-tracker.debian.org/tracker/CVE-2019-1010022",
+            "https://sourceware.org/bugzilla/show_bug.cgi?id=22850",
+            "https://sourceware.org/bugzilla/show_bug.cgi?id=22850#c3",
+            "https://ubuntu.com/security/CVE-2019-1010022"
+          ],
+          "PublishedDate": "2019-07-15T04:15:00Z",
+          "LastModifiedDate": "2021-06-10T17:15:00Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2019-1010023",
+          "PkgName": "libc6",
+          "InstalledVersion": "2.31-13+deb11u3",
+          "Layer": {
+            "Digest": "sha256:d7fbeaa2da3f6cfab1f394b047209b702fd611e17c7ea79027900b833ad2a771",
+            "DiffID": "sha256:a93413564615e6428c3555f41bbfc999708dea3d99c7994e46a204c5da54b2a9"
+          },
+          "SeveritySource": "debian",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2019-1010023",
+          "DataSource": {
+            "ID": "debian",
+            "Name": "Debian Security Tracker",
+            "URL": "https://salsa.debian.org/security-tracker-team/security-tracker"
+          },
+          "Title": "glibc: running ldd on malicious ELF leads to code execution because of wrong size computation",
+          "Description": "** DISPUTED ** GNU Libc current is affected by: Re-mapping current loaded library with malicious ELF file. The impact is: In worst case attacker may evaluate privileges. The component is: libld. The attack vector is: Attacker sends 2 ELF files to victim and asks to run ldd on it. ldd execute code. NOTE: Upstream comments indicate \"this is being treated as a non-security bug and no real threat.\"",
+          "Severity": "LOW",
+          "CVSS": {
+            "nvd": {
+              "V2Vector": "AV:N/AC:M/Au:N/C:P/I:P/A:P",
+              "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+              "V2Score": 6.8,
+              "V3Score": 8.8
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.0/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+              "V3Score": 7.8
+            }
+          },
+          "References": [
+            "http://www.securityfocus.com/bid/109167",
+            "https://access.redhat.com/security/cve/CVE-2019-1010023",
+            "https://security-tracker.debian.org/tracker/CVE-2019-1010023",
+            "https://sourceware.org/bugzilla/show_bug.cgi?id=22851",
+            "https://support.f5.com/csp/article/K11932200?utm_source=f5support\u0026amp;utm_medium=RSS",
+            "https://ubuntu.com/security/CVE-2019-1010023"
+          ],
+          "PublishedDate": "2019-07-15T04:15:00Z",
+          "LastModifiedDate": "2020-11-16T20:15:00Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2019-1010024",
+          "PkgName": "libc6",
+          "InstalledVersion": "2.31-13+deb11u3",
+          "Layer": {
+            "Digest": "sha256:d7fbeaa2da3f6cfab1f394b047209b702fd611e17c7ea79027900b833ad2a771",
+            "DiffID": "sha256:a93413564615e6428c3555f41bbfc999708dea3d99c7994e46a204c5da54b2a9"
+          },
+          "SeveritySource": "debian",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2019-1010024",
+          "DataSource": {
+            "ID": "debian",
+            "Name": "Debian Security Tracker",
+            "URL": "https://salsa.debian.org/security-tracker-team/security-tracker"
+          },
+          "Title": "glibc: ASLR bypass using cache of thread stack and heap",
+          "Description": "** DISPUTED ** GNU Libc current is affected by: Mitigation bypass. The impact is: Attacker may bypass ASLR using cache of thread stack and heap. The component is: glibc. NOTE: Upstream comments indicate \"this is being treated as a non-security bug and no real threat.\"",
+          "Severity": "LOW",
+          "CweIDs": [
+            "CWE-200"
+          ],
+          "CVSS": {
+            "nvd": {
+              "V2Vector": "AV:N/AC:L/Au:N/C:P/I:N/A:N",
+              "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+              "V2Score": 5,
+              "V3Score": 5.3
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+              "V3Score": 5.3
+            }
+          },
+          "References": [
+            "http://www.securityfocus.com/bid/109162",
+            "https://access.redhat.com/security/cve/CVE-2019-1010024",
+            "https://security-tracker.debian.org/tracker/CVE-2019-1010024",
+            "https://sourceware.org/bugzilla/show_bug.cgi?id=22852",
+            "https://support.f5.com/csp/article/K06046097",
+            "https://support.f5.com/csp/article/K06046097?utm_source=f5support\u0026amp;utm_medium=RSS",
+            "https://ubuntu.com/security/CVE-2019-1010024"
+          ],
+          "PublishedDate": "2019-07-15T04:15:00Z",
+          "LastModifiedDate": "2020-11-16T20:15:00Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2019-1010025",
+          "PkgName": "libc6",
+          "InstalledVersion": "2.31-13+deb11u3",
+          "Layer": {
+            "Digest": "sha256:d7fbeaa2da3f6cfab1f394b047209b702fd611e17c7ea79027900b833ad2a771",
+            "DiffID": "sha256:a93413564615e6428c3555f41bbfc999708dea3d99c7994e46a204c5da54b2a9"
+          },
+          "SeveritySource": "debian",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2019-1010025",
+          "DataSource": {
+            "ID": "debian",
+            "Name": "Debian Security Tracker",
+            "URL": "https://salsa.debian.org/security-tracker-team/security-tracker"
+          },
+          "Title": "glibc: information disclosure of heap addresses of pthread_created thread",
+          "Description": "** DISPUTED ** GNU Libc current is affected by: Mitigation bypass. The impact is: Attacker may guess the heap addresses of pthread_created thread. The component is: glibc. NOTE: the vendor's position is \"ASLR bypass itself is not a vulnerability.\"",
+          "Severity": "LOW",
+          "CweIDs": [
+            "CWE-330"
+          ],
+          "CVSS": {
+            "nvd": {
+              "V2Vector": "AV:N/AC:L/Au:N/C:P/I:N/A:N",
+              "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+              "V2Score": 5,
+              "V3Score": 5.3
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.0/AV:L/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:N",
+              "V3Score": 2.9
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2019-1010025",
+            "https://security-tracker.debian.org/tracker/CVE-2019-1010025",
+            "https://sourceware.org/bugzilla/show_bug.cgi?id=22853",
+            "https://support.f5.com/csp/article/K06046097",
+            "https://support.f5.com/csp/article/K06046097?utm_source=f5support\u0026amp;utm_medium=RSS",
+            "https://ubuntu.com/security/CVE-2019-1010025"
+          ],
+          "PublishedDate": "2019-07-15T04:15:00Z",
+          "LastModifiedDate": "2020-11-16T20:15:00Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2019-9192",
+          "PkgName": "libc6",
+          "InstalledVersion": "2.31-13+deb11u3",
+          "Layer": {
+            "Digest": "sha256:d7fbeaa2da3f6cfab1f394b047209b702fd611e17c7ea79027900b833ad2a771",
+            "DiffID": "sha256:a93413564615e6428c3555f41bbfc999708dea3d99c7994e46a204c5da54b2a9"
+          },
+          "SeveritySource": "debian",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2019-9192",
+          "DataSource": {
+            "ID": "debian",
+            "Name": "Debian Security Tracker",
+            "URL": "https://salsa.debian.org/security-tracker-team/security-tracker"
+          },
+          "Title": "glibc: uncontrolled recursion in function check_dst_limits_calc_pos_1 in posix/regexec.c",
+          "Description": "** DISPUTED ** In the GNU C Library (aka glibc or libc6) through 2.29, check_dst_limits_calc_pos_1 in posix/regexec.c has Uncontrolled Recursion, as demonstrated by '(|)(\\\\1\\\\1)*' in grep, a different issue than CVE-2018-20796. NOTE: the software maintainer disputes that this is a vulnerability because the behavior occurs only with a crafted pattern.",
+          "Severity": "LOW",
+          "CweIDs": [
+            "CWE-674"
+          ],
+          "CVSS": {
+            "nvd": {
+              "V2Vector": "AV:N/AC:L/Au:N/C:N/I:N/A:P",
+              "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V2Score": 5,
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.0/AV:L/AC:L/PR:L/UI:R/S:U/C:N/I:N/A:L",
+              "V3Score": 2.8
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2019-9192",
+            "https://nvd.nist.gov/vuln/detail/CVE-2019-9192",
+            "https://sourceware.org/bugzilla/show_bug.cgi?id=24269",
+            "https://support.f5.com/csp/article/K26346590?utm_source=f5support\u0026amp;utm_medium=RSS"
+          ],
+          "PublishedDate": "2019-02-26T18:29:00Z",
+          "LastModifiedDate": "2020-08-24T17:37:00Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2022-2097",
+          "PkgName": "libssl1.1",
+          "InstalledVersion": "1.1.1n-0+deb11u3",
+          "Layer": {
+            "Digest": "sha256:d7fbeaa2da3f6cfab1f394b047209b702fd611e17c7ea79027900b833ad2a771",
+            "DiffID": "sha256:a93413564615e6428c3555f41bbfc999708dea3d99c7994e46a204c5da54b2a9"
+          },
+          "SeveritySource": "nvd",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2022-2097",
+          "DataSource": {
+            "ID": "debian",
+            "Name": "Debian Security Tracker",
+            "URL": "https://salsa.debian.org/security-tracker-team/security-tracker"
+          },
+          "Title": "openssl: AES OCB fails to encrypt some bytes",
+          "Description": "AES OCB mode for 32-bit x86 platforms using the AES-NI assembly optimised implementation will not encrypt the entirety of the data under some circumstances. This could reveal sixteen bytes of data that was preexisting in the memory that wasn't written. In the special case of \"in place\" encryption, sixteen bytes of the plaintext would be revealed. Since OpenSSL does not support OCB based cipher suites for TLS and DTLS, they are both unaffected. Fixed in OpenSSL 3.0.5 (Affected 3.0.0-3.0.4). Fixed in OpenSSL 1.1.1q (Affected 1.1.1-1.1.1p).",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-326"
+          ],
+          "CVSS": {
+            "nvd": {
+              "V2Vector": "AV:N/AC:L/Au:N/C:P/I:N/A:N",
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+              "V2Score": 5,
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+              "V3Score": 5.3
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2022:5818",
+            "https://access.redhat.com/security/cve/CVE-2022-2097",
+            "https://bugzilla.redhat.com/2081494",
+            "https://bugzilla.redhat.com/2097310",
+            "https://bugzilla.redhat.com/2104905",
+            "https://crates.io/crates/openssl-src",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-2097",
+            "https://errata.almalinux.org/8/ALSA-2022-5818.html",
+            "https://git.openssl.org/gitweb/?p=openssl.git;a=commitdiff;h=919925673d6c9cfed3c1085497f5dfbbed5fc431",
+            "https://git.openssl.org/gitweb/?p=openssl.git;a=commitdiff;h=a98f339ddd7e8f487d6e0088d4a9a42324885a93",
+            "https://linux.oracle.com/cve/CVE-2022-2097.html",
+            "https://linux.oracle.com/errata/ELSA-2022-9683.html",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/R6CK57NBQFTPUMXAPJURCGXUYT76NQAK/",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/V6567JERRHHJW2GNGJGKDRNHR7SNPZK7/",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/VCMNWKERPBKOEBNL7CLTTX3ZZCZLH7XA/",
+            "https://nvd.nist.gov/vuln/detail/CVE-2022-2097",
+            "https://rustsec.org/advisories/RUSTSEC-2022-0032.html",
+            "https://security.netapp.com/advisory/ntap-20220715-0011/",
+            "https://ubuntu.com/security/notices/USN-5502-1",
+            "https://www.openssl.org/news/secadv/20220705.txt"
+          ],
+          "PublishedDate": "2022-07-05T11:15:00Z",
+          "LastModifiedDate": "2022-07-23T04:15:00Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2007-6755",
+          "PkgName": "libssl1.1",
+          "InstalledVersion": "1.1.1n-0+deb11u3",
+          "Layer": {
+            "Digest": "sha256:d7fbeaa2da3f6cfab1f394b047209b702fd611e17c7ea79027900b833ad2a771",
+            "DiffID": "sha256:a93413564615e6428c3555f41bbfc999708dea3d99c7994e46a204c5da54b2a9"
+          },
+          "SeveritySource": "debian",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2007-6755",
+          "DataSource": {
+            "ID": "debian",
+            "Name": "Debian Security Tracker",
+            "URL": "https://salsa.debian.org/security-tracker-team/security-tracker"
+          },
+          "Title": "Dual_EC_DRBG: weak pseudo random number generator",
+          "Description": "The NIST SP 800-90A default statement of the Dual Elliptic Curve Deterministic Random Bit Generation (Dual_EC_DRBG) algorithm contains point Q constants with a possible relationship to certain \"skeleton key\" values, which might allow context-dependent attackers to defeat cryptographic protection mechanisms by leveraging knowledge of those values.  NOTE: this is a preliminary CVE for Dual_EC_DRBG; future research may provide additional details about point Q and associated attacks, and could potentially lead to a RECAST or REJECT of this CVE.",
+          "Severity": "LOW",
+          "CweIDs": [
+            "CWE-310"
+          ],
+          "CVSS": {
+            "nvd": {
+              "V2Vector": "AV:N/AC:M/Au:N/C:P/I:P/A:N",
+              "V2Score": 5.8
+            },
+            "redhat": {
+              "V2Vector": "AV:N/AC:M/Au:N/C:P/I:P/A:N",
+              "V2Score": 5.8
+            }
+          },
+          "References": [
+            "http://arstechnica.com/security/2013/09/stop-using-nsa-influence-code-in-our-product-rsa-tells-customers/",
+            "http://blog.cryptographyengineering.com/2013/09/rsa-warns-developers-against-its-own.html",
+            "http://blog.cryptographyengineering.com/2013/09/the-many-flaws-of-dualecdrbg.html",
+            "http://rump2007.cr.yp.to/15-shumow.pdf",
+            "http://stream.wsj.com/story/latest-headlines/SS-2-63399/SS-2-332655/",
+            "http://threatpost.com/in-wake-of-latest-crypto-revelations-everything-is-suspect",
+            "http://www.securityfocus.com/bid/63657",
+            "https://access.redhat.com/security/cve/CVE-2007-6755",
+            "https://www.schneier.com/blog/archives/2007/11/the_strange_sto.html"
+          ],
+          "PublishedDate": "2013-10-11T22:55:00Z",
+          "LastModifiedDate": "2021-11-30T18:57:00Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2010-0928",
+          "PkgName": "libssl1.1",
+          "InstalledVersion": "1.1.1n-0+deb11u3",
+          "Layer": {
+            "Digest": "sha256:d7fbeaa2da3f6cfab1f394b047209b702fd611e17c7ea79027900b833ad2a771",
+            "DiffID": "sha256:a93413564615e6428c3555f41bbfc999708dea3d99c7994e46a204c5da54b2a9"
+          },
+          "SeveritySource": "debian",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2010-0928",
+          "DataSource": {
+            "ID": "debian",
+            "Name": "Debian Security Tracker",
+            "URL": "https://salsa.debian.org/security-tracker-team/security-tracker"
+          },
+          "Title": "openssl: RSA authentication weakness",
+          "Description": "OpenSSL 0.9.8i on the Gaisler Research LEON3 SoC on the Xilinx Virtex-II Pro FPGA uses a Fixed Width Exponentiation (FWE) algorithm for certain signature calculations, and does not verify the signature before providing it to a caller, which makes it easier for physically proximate attackers to determine the private key via a modified supply voltage for the microprocessor, related to a \"fault-based attack.\"",
+          "Severity": "LOW",
+          "CweIDs": [
+            "CWE-310"
+          ],
+          "CVSS": {
+            "nvd": {
+              "V2Vector": "AV:L/AC:H/Au:N/C:C/I:N/A:N",
+              "V2Score": 4
+            }
+          },
+          "References": [
+            "http://rdist.root.org/2010/03/08/attacking-rsa-exponentiation-with-fault-injection/",
+            "http://www.eecs.umich.edu/%7Evaleria/research/publications/DATE10RSA.pdf",
+            "http://www.networkworld.com/news/2010/030410-rsa-security-attack.html",
+            "http://www.osvdb.org/62808",
+            "http://www.theregister.co.uk/2010/03/04/severe_openssl_vulnerability/",
+            "https://access.redhat.com/security/cve/CVE-2010-0928",
+            "https://exchange.xforce.ibmcloud.com/vulnerabilities/56750"
+          ],
+          "PublishedDate": "2010-03-05T19:30:00Z",
+          "LastModifiedDate": "2017-08-17T01:32:00Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2022-2097",
+          "PkgName": "openssl",
+          "InstalledVersion": "1.1.1n-0+deb11u3",
+          "Layer": {
+            "Digest": "sha256:d7fbeaa2da3f6cfab1f394b047209b702fd611e17c7ea79027900b833ad2a771",
+            "DiffID": "sha256:a93413564615e6428c3555f41bbfc999708dea3d99c7994e46a204c5da54b2a9"
+          },
+          "SeveritySource": "nvd",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2022-2097",
+          "DataSource": {
+            "ID": "debian",
+            "Name": "Debian Security Tracker",
+            "URL": "https://salsa.debian.org/security-tracker-team/security-tracker"
+          },
+          "Title": "openssl: AES OCB fails to encrypt some bytes",
+          "Description": "AES OCB mode for 32-bit x86 platforms using the AES-NI assembly optimised implementation will not encrypt the entirety of the data under some circumstances. This could reveal sixteen bytes of data that was preexisting in the memory that wasn't written. In the special case of \"in place\" encryption, sixteen bytes of the plaintext would be revealed. Since OpenSSL does not support OCB based cipher suites for TLS and DTLS, they are both unaffected. Fixed in OpenSSL 3.0.5 (Affected 3.0.0-3.0.4). Fixed in OpenSSL 1.1.1q (Affected 1.1.1-1.1.1p).",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-326"
+          ],
+          "CVSS": {
+            "nvd": {
+              "V2Vector": "AV:N/AC:L/Au:N/C:P/I:N/A:N",
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+              "V2Score": 5,
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+              "V3Score": 5.3
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2022:5818",
+            "https://access.redhat.com/security/cve/CVE-2022-2097",
+            "https://bugzilla.redhat.com/2081494",
+            "https://bugzilla.redhat.com/2097310",
+            "https://bugzilla.redhat.com/2104905",
+            "https://crates.io/crates/openssl-src",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-2097",
+            "https://errata.almalinux.org/8/ALSA-2022-5818.html",
+            "https://git.openssl.org/gitweb/?p=openssl.git;a=commitdiff;h=919925673d6c9cfed3c1085497f5dfbbed5fc431",
+            "https://git.openssl.org/gitweb/?p=openssl.git;a=commitdiff;h=a98f339ddd7e8f487d6e0088d4a9a42324885a93",
+            "https://linux.oracle.com/cve/CVE-2022-2097.html",
+            "https://linux.oracle.com/errata/ELSA-2022-9683.html",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/R6CK57NBQFTPUMXAPJURCGXUYT76NQAK/",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/V6567JERRHHJW2GNGJGKDRNHR7SNPZK7/",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/VCMNWKERPBKOEBNL7CLTTX3ZZCZLH7XA/",
+            "https://nvd.nist.gov/vuln/detail/CVE-2022-2097",
+            "https://rustsec.org/advisories/RUSTSEC-2022-0032.html",
+            "https://security.netapp.com/advisory/ntap-20220715-0011/",
+            "https://ubuntu.com/security/notices/USN-5502-1",
+            "https://www.openssl.org/news/secadv/20220705.txt"
+          ],
+          "PublishedDate": "2022-07-05T11:15:00Z",
+          "LastModifiedDate": "2022-07-23T04:15:00Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2007-6755",
+          "PkgName": "openssl",
+          "InstalledVersion": "1.1.1n-0+deb11u3",
+          "Layer": {
+            "Digest": "sha256:d7fbeaa2da3f6cfab1f394b047209b702fd611e17c7ea79027900b833ad2a771",
+            "DiffID": "sha256:a93413564615e6428c3555f41bbfc999708dea3d99c7994e46a204c5da54b2a9"
+          },
+          "SeveritySource": "debian",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2007-6755",
+          "DataSource": {
+            "ID": "debian",
+            "Name": "Debian Security Tracker",
+            "URL": "https://salsa.debian.org/security-tracker-team/security-tracker"
+          },
+          "Title": "Dual_EC_DRBG: weak pseudo random number generator",
+          "Description": "The NIST SP 800-90A default statement of the Dual Elliptic Curve Deterministic Random Bit Generation (Dual_EC_DRBG) algorithm contains point Q constants with a possible relationship to certain \"skeleton key\" values, which might allow context-dependent attackers to defeat cryptographic protection mechanisms by leveraging knowledge of those values.  NOTE: this is a preliminary CVE for Dual_EC_DRBG; future research may provide additional details about point Q and associated attacks, and could potentially lead to a RECAST or REJECT of this CVE.",
+          "Severity": "LOW",
+          "CweIDs": [
+            "CWE-310"
+          ],
+          "CVSS": {
+            "nvd": {
+              "V2Vector": "AV:N/AC:M/Au:N/C:P/I:P/A:N",
+              "V2Score": 5.8
+            },
+            "redhat": {
+              "V2Vector": "AV:N/AC:M/Au:N/C:P/I:P/A:N",
+              "V2Score": 5.8
+            }
+          },
+          "References": [
+            "http://arstechnica.com/security/2013/09/stop-using-nsa-influence-code-in-our-product-rsa-tells-customers/",
+            "http://blog.cryptographyengineering.com/2013/09/rsa-warns-developers-against-its-own.html",
+            "http://blog.cryptographyengineering.com/2013/09/the-many-flaws-of-dualecdrbg.html",
+            "http://rump2007.cr.yp.to/15-shumow.pdf",
+            "http://stream.wsj.com/story/latest-headlines/SS-2-63399/SS-2-332655/",
+            "http://threatpost.com/in-wake-of-latest-crypto-revelations-everything-is-suspect",
+            "http://www.securityfocus.com/bid/63657",
+            "https://access.redhat.com/security/cve/CVE-2007-6755",
+            "https://www.schneier.com/blog/archives/2007/11/the_strange_sto.html"
+          ],
+          "PublishedDate": "2013-10-11T22:55:00Z",
+          "LastModifiedDate": "2021-11-30T18:57:00Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2010-0928",
+          "PkgName": "openssl",
+          "InstalledVersion": "1.1.1n-0+deb11u3",
+          "Layer": {
+            "Digest": "sha256:d7fbeaa2da3f6cfab1f394b047209b702fd611e17c7ea79027900b833ad2a771",
+            "DiffID": "sha256:a93413564615e6428c3555f41bbfc999708dea3d99c7994e46a204c5da54b2a9"
+          },
+          "SeveritySource": "debian",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2010-0928",
+          "DataSource": {
+            "ID": "debian",
+            "Name": "Debian Security Tracker",
+            "URL": "https://salsa.debian.org/security-tracker-team/security-tracker"
+          },
+          "Title": "openssl: RSA authentication weakness",
+          "Description": "OpenSSL 0.9.8i on the Gaisler Research LEON3 SoC on the Xilinx Virtex-II Pro FPGA uses a Fixed Width Exponentiation (FWE) algorithm for certain signature calculations, and does not verify the signature before providing it to a caller, which makes it easier for physically proximate attackers to determine the private key via a modified supply voltage for the microprocessor, related to a \"fault-based attack.\"",
+          "Severity": "LOW",
+          "CweIDs": [
+            "CWE-310"
+          ],
+          "CVSS": {
+            "nvd": {
+              "V2Vector": "AV:L/AC:H/Au:N/C:C/I:N/A:N",
+              "V2Score": 4
+            }
+          },
+          "References": [
+            "http://rdist.root.org/2010/03/08/attacking-rsa-exponentiation-with-fault-injection/",
+            "http://www.eecs.umich.edu/%7Evaleria/research/publications/DATE10RSA.pdf",
+            "http://www.networkworld.com/news/2010/030410-rsa-security-attack.html",
+            "http://www.osvdb.org/62808",
+            "http://www.theregister.co.uk/2010/03/04/severe_openssl_vulnerability/",
+            "https://access.redhat.com/security/cve/CVE-2010-0928",
+            "https://exchange.xforce.ibmcloud.com/vulnerabilities/56750"
+          ],
+          "PublishedDate": "2010-03-05T19:30:00Z",
+          "LastModifiedDate": "2017-08-17T01:32:00Z"
+        }
+      ]
+    }
+  ]
+}
