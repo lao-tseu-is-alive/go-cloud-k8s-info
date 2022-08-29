@@ -1,11 +1,10 @@
 ## go-cloud-k8s-info
-1. [ ] 
-2. [ ] [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=lao-tseu-is-alive_go-cloud-k8s-info&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=lao-tseu-is-alive_go-cloud-k8s-info)
-3. [ ] [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=lao-tseu-is-alive_go-cloud-k8s-info&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=lao-tseu-is-alive_go-cloud-k8s-info)
-4. [ ] [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=lao-tseu-is-alive_go-cloud-k8s-info&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=lao-tseu-is-alive_go-cloud-k8s-info)
-5. [ ] [![cve-trivy-scan](https://github.com/lao-tseu-is-alive/go-cloud-k8s-info/actions/workflows/cve-trivy-scan.yml/badge.svg)](https://github.com/lao-tseu-is-alive/go-cloud-k8s-info/actions/workflows/cve-trivy-scan.yml)
-6. [ ] [![codecov](https://codecov.io/gh/lao-tseu-is-alive/go-cloud-k8s-info/branch/main/graph/badge.svg)](https://codecov.io/gh/lao-tseu-is-alive/go-cloud-k8s-info)
-7. [ ] 
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=lao-tseu-is-alive_go-cloud-k8s-info&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=lao-tseu-is-alive_go-cloud-k8s-info)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=lao-tseu-is-alive_go-cloud-k8s-info&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=lao-tseu-is-alive_go-cloud-k8s-info)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=lao-tseu-is-alive_go-cloud-k8s-info&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=lao-tseu-is-alive_go-cloud-k8s-info)
+[![cve-trivy-scan](https://github.com/lao-tseu-is-alive/go-cloud-k8s-info/actions/workflows/cve-trivy-scan.yml/badge.svg)](https://github.com/lao-tseu-is-alive/go-cloud-k8s-info/actions/workflows/cve-trivy-scan.yml)
+[![codecov](https://codecov.io/gh/lao-tseu-is-alive/go-cloud-k8s-info/branch/main/graph/badge.svg)](https://codecov.io/gh/lao-tseu-is-alive/go-cloud-k8s-info)
+ 
 _**go-cloud-k8s-info** is a simple "nano"-service written in Golang 
 that gives some runtime information. 
 This project showcases how to build a container image with nerdctl, in a secured way 
