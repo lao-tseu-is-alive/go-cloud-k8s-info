@@ -3,8 +3,11 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"log"
@@ -22,17 +25,17 @@ import (
 )
 
 const (
-	VERSION                = "0.4.2"
+	VERSION                = "0.4.3"
 	APP                    = "go-cloud-k8s-info"
 	defaultProtocol        = "http"
 	defaultPort            = 8080
 	defaultServerIp        = ""
 	defaultServerPath      = "/"
 	defaultSecondsToSleep  = 3
-	secondsShutDownTimeout = 5 * time.Second // maximum number of second to wait before closing server
-	defaultReadTimeout     = 2 * time.Minute // max time to read request from the client
-	defaultWriteTimeout    = 2 * time.Minute // max time to write response to the client
-	defaultIdleTimeout     = 2 * time.Minute // max time for connections using TCP Keep-Alive
+	secondsShutDownTimeout = 5 * time.Second  // maximum number of second to wait before closing server
+	defaultReadTimeout     = 10 * time.Second // max time to read request from the client
+	defaultWriteTimeout    = 10 * time.Second // max time to write response to the client
+	defaultIdleTimeout     = 2 * time.Minute  // max time for connections using TCP Keep-Alive
 	defaultNotFound        = "🤔 ℍ𝕞𝕞... 𝕤𝕠𝕣𝕣𝕪 :【𝟜𝟘𝟜 : ℙ𝕒𝕘𝕖 ℕ𝕠𝕥 𝔽𝕠𝕦𝕟𝕕】🕳️ 🔥"
 	htmlHeaderStart        = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css"/>`
 	charsetUTF8            = "charset=UTF-8"
@@ -48,27 +51,30 @@ const (
 )
 
 type RuntimeInfo struct {
-	Hostname           string              `json:"hostname"`              //  host name reported by the kernel.
-	Pid                int                 `json:"pid"`                   //  process id of the caller.
-	PPid               int                 `json:"ppid"`                  //  process id of the caller's parent.
-	Uid                int                 `json:"uid"`                   //  numeric user id of the caller.
-	Appname            string              `json:"appname"`               // name of this application
-	Version            string              `json:"version"`               // version of this application
-	ParamName          string              `json:"param_name"`            // value of the name parameter (_NO_PARAMETER_NAME_ if name was not set)
-	RemoteAddr         string              `json:"remote_addr"`           // remote client ip address
-	RequestId          string              `json:"request_id"`            //  globally unique request id
-	GOOS               string              `json:"goos"`                  // operating system
-	GOARCH             string              `json:"goarch"`                // architecture
-	Runtime            string              `json:"runtime"`               // go runtime at compilation time
-	NumGoroutine       string              `json:"num_goroutine"`         // number of go routines
-	OsReleaseName      string              `json:"os_release_name"`       // Linux release Name or _UNKNOWN_
-	OsReleaseVersion   string              `json:"os_release_version"`    // Linux release Version or _UNKNOWN_
-	OsReleaseVersionId string              `json:"os_release_version_id"` // Linux release VersionId or _UNKNOWN_
-	NumCPU             string              `json:"num_cpu"`               // number of cpu
-	Uptime             string              `json:"uptime"`                // tells how long this service was started based on an internal variable
-	UptimeOs           string              `json:"uptime_os"`             // tells how long system was started based on /proc/uptime
-	EnvVars            []string            `json:"env_vars"`              // environment variables
-	Headers            map[string][]string `json:"headers"`               // received headers
+	Hostname            string              `json:"hostname"`              // host name reported by the kernel.
+	Pid                 int                 `json:"pid"`                   // process id of the caller.
+	PPid                int                 `json:"ppid"`                  // process id of the caller's parent.
+	Uid                 int                 `json:"uid"`                   // numeric user id of the caller.
+	Appname             string              `json:"appname"`               // name of this application
+	Version             string              `json:"version"`               // version of this application
+	ParamName           string              `json:"param_name"`            // value of the name parameter (_NO_PARAMETER_NAME_ if name was not set)
+	RemoteAddr          string              `json:"remote_addr"`           // remote client ip address
+	RequestId           string              `json:"request_id"`            // globally unique request id
+	GOOS                string              `json:"goos"`                  // operating system
+	GOARCH              string              `json:"goarch"`                // architecture
+	Runtime             string              `json:"runtime"`               // go runtime at compilation time
+	NumGoroutine        string              `json:"num_goroutine"`         // number of go routines
+	OsReleaseName       string              `json:"os_release_name"`       // Linux release Name or _UNKNOWN_
+	OsReleaseVersion    string              `json:"os_release_version"`    // Linux release Version or _UNKNOWN_
+	OsReleaseVersionId  string              `json:"os_release_version_id"` // Linux release VersionId or _UNKNOWN_
+	NumCPU              string              `json:"num_cpu"`               // number of cpu
+	Uptime              string              `json:"uptime"`                // tells how long this service was started based on an internal variable
+	UptimeOs            string              `json:"uptime_os"`             // tells how long system was started based on /proc/uptime
+	K8sApiUrl           string              `json:"k8s_api_url"`           // url for k8s api based KUBERNETES_SERVICE_HOST
+	K8sVersion          string              `json:"k8s_version"`           // version of k8s cluster
+	K8sCurrentNamespace string              `json:"k8s_current_namespace"` // k8s namespace of this container
+	EnvVars             []string            `json:"env_vars"`              // environment variables
+	Headers             map[string][]string `json:"headers"`               // received headers
 }
 
 type ErrorConfig struct {
@@ -76,7 +82,7 @@ type ErrorConfig struct {
 	msg string
 }
 
-//Error returns a string with an error and a specifics message
+// Error returns a string with an error and a specifics message
 func (e *ErrorConfig) Error() string {
 	return fmt.Sprintf("%s : %v", e.msg, e.err)
 }
@@ -85,6 +91,13 @@ type OsInfo struct {
 	Name      string `json:"name"`
 	Version   string `json:"version"`
 	VersionId string `json:"versionId"`
+}
+
+type K8sInfo struct {
+	CurrentNamespace string `json:"current_namespace"`
+	Version          string `json:"version"`
+	Token            string `json:"token"`
+	CaCert           string `json:"ca_cert"`
 }
 
 func GetOsUptime() (string, error) {
@@ -107,7 +120,7 @@ func GetOsInfo() (*OsInfo, ErrorConfig) {
 		Version:   defaultUnknown,
 		VersionId: defaultUnknown,
 	}
-	content, err := ioutil.ReadFile(OsReleasePath)
+	content, err := os.ReadFile(OsReleasePath)
 	if err != nil {
 		return &info, ErrorConfig{
 			err: err,
@@ -142,9 +155,10 @@ func GetOsInfo() (*OsInfo, ErrorConfig) {
 	}
 }
 
-//GetPortFromEnv returns a valid TCP/IP listening ':PORT' string based on the values of environment variable :
-//	PORT : int value between 1 and 65535 (the parameter defaultPort will be used if env is not defined)
-//  in case the ENV variable PORT exists and contains an invalid integer the functions returns an empty string and an error
+// GetPortFromEnv returns a valid TCP/IP listening ':PORT' string based on the values of environment variable :
+//
+//		PORT : int value between 1 and 65535 (the parameter defaultPort will be used if env is not defined)
+//	 in case the ENV variable PORT exists and contains an invalid integer the functions returns an empty string and an error
 func GetPortFromEnv(defaultPort int) (string, error) {
 	srvPort := defaultPort
 
@@ -166,6 +180,155 @@ func GetPortFromEnv(defaultPort int) (string, error) {
 		}
 	}
 	return fmt.Sprintf(":%d", srvPort), nil
+}
+
+// GetKubernetesApiUrlFromEnv returns the k8s api url based on the content of standard env var :
+//
+//	KUBERNETES_SERVICE_HOST
+//	KUBERNETES_SERVICE_PORT
+//	in case the above ENV variables doesn't  exist the function returns an empty string and an error
+func GetKubernetesApiUrlFromEnv() (string, error) {
+	srvPort := 443
+	k8sApiUrl := "https://"
+
+	var err error
+	val, exist := os.LookupEnv("KUBERNETES_SERVICE_HOST")
+	if !exist {
+		return "", &ErrorConfig{
+			err: err,
+			msg: "ERROR: KUBERNETES_SERVICE_HOST ENV variable does not exist (not inside K8s ?).",
+		}
+	}
+	k8sApiUrl = fmt.Sprintf("%s%s", k8sApiUrl, val)
+	val, exist = os.LookupEnv("KUBERNETES_SERVICE_PORT")
+	if exist {
+		srvPort, err = strconv.Atoi(val)
+		if err != nil {
+			return "", &ErrorConfig{
+				err: err,
+				msg: "ERROR: CONFIG ENV PORT should contain a valid integer.",
+			}
+		}
+		if srvPort < 1 || srvPort > 65535 {
+			return "", &ErrorConfig{
+				err: err,
+				msg: "ERROR: CONFIG ENV PORT should contain an integer between 1 and 65535",
+			}
+		}
+	}
+	return fmt.Sprintf("%s:%d", k8sApiUrl, srvPort), nil
+}
+
+func GetKubernetesConnInfo(logger *log.Logger) (*K8sInfo, ErrorConfig) {
+	const K8sServiceAccountPath = "/var/run/secrets/kubernetes.io/serviceaccount"
+	K8sNamespacePath := fmt.Sprintf("%s/namespace", K8sServiceAccountPath)
+	K8sTokenPath := fmt.Sprintf("%s/token", K8sServiceAccountPath)
+	K8sCaCertPath := fmt.Sprintf("%s/ca.crt", K8sServiceAccountPath)
+
+	info := K8sInfo{
+		CurrentNamespace: "",
+		Version:          "",
+		Token:            "",
+		CaCert:           "",
+	}
+
+	K8sNamespace, err := os.ReadFile(K8sNamespacePath)
+	if err != nil {
+		return &info, ErrorConfig{
+			err: err,
+			msg: "GetKubernetesConnInfo: error reading namespace in " + K8sNamespacePath,
+		}
+	}
+	info.CurrentNamespace = string(K8sNamespace)
+
+	K8sToken, err := os.ReadFile(K8sTokenPath)
+	if err != nil {
+		return &info, ErrorConfig{
+			err: err,
+			msg: "GetKubernetesConnInfo: error reading token in " + K8sTokenPath,
+		}
+	}
+	info.Token = string(K8sToken)
+
+	K8sCaCert, err := os.ReadFile(K8sCaCertPath)
+	if err != nil {
+		return &info, ErrorConfig{
+			err: err,
+			msg: "GetKubernetesConnInfo: error reading Ca Cert in " + K8sCaCertPath,
+		}
+	}
+	info.CaCert = string(K8sCaCert)
+
+	k8sUrl, err := GetKubernetesApiUrlFromEnv()
+	if err != nil {
+		return &info, ErrorConfig{
+			err: err,
+			msg: "GetKubernetesConnInfo: error reading GetKubernetesApiUrlFromEnv ",
+		}
+	}
+	urlVersion := fmt.Sprintf("%s/openapi/v2", k8sUrl)
+	res, err := GetJsonFromUrl(urlVersion, info.Token, K8sCaCert, logger)
+	if err != nil {
+
+		logger.Printf("GetKubernetesConnInfo: error in GetJsonFromUrl(url:%s) err:%v", urlVersion, err)
+		//return &info, ErrorConfig{
+		//	err: err,
+		//	msg: fmt.Sprintf("GetKubernetesConnInfo: error doing GetJsonFromUrl(url:%s)", urlVersion),
+		//}
+	} else {
+		logger.Printf("GetKubernetesConnInfo: successfully returned from GetJsonFromUrl(url:%s)", urlVersion)
+		var myVersionRegex = regexp.MustCompile("{\"title\":\"(?P<title>.+)\",\"version\":\"(?P<version>.+)\"}")
+		match := myVersionRegex.FindStringSubmatch(strings.TrimSpace(res[:150]))
+		k8sVersionFields := make(map[string]string)
+		for i, name := range myVersionRegex.SubexpNames() {
+			if i != 0 && name != "" {
+				k8sVersionFields[name] = match[i]
+			}
+		}
+		info.Version = fmt.Sprintf("%s, %s", k8sVersionFields["title"], k8sVersionFields["version"])
+	}
+
+	return &info, ErrorConfig{
+		err: nil,
+		msg: "",
+	}
+}
+
+func GetJsonFromUrl(url string, token string, caCert []byte, logger *log.Logger) (string, error) {
+	// Create a Bearer string by appending string access token
+	var bearer = "Bearer " + token
+
+	// Create a new request using http
+	req, err := http.NewRequest("GET", url, nil)
+
+	// add authorization header to the req
+	req.Header.Add("Authorization", bearer)
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			RootCAs: caCertPool,
+		},
+	}
+	// Send req using http Client
+	client := &http.Client{
+		Transport: tr,
+		Timeout:   defaultReadTimeout,
+	}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		logger.Println("Error on response.\n[ERROR] -", err)
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Println("Error while reading the response bytes:", err)
+		return "", err
+	}
+	return string([]byte(body)), nil
 }
 
 func getHtmlHeader(title string) string {
@@ -199,7 +362,7 @@ func WaitForHttpServer(listenAddress string, waitDuration time.Duration, numRetr
 	log.Fatalf("Server %s not ready up after %d attempts", listenAddress, numRetries)
 }
 
-//waitForShutdownToExit will wait for interrupt signal SIGINT or SIGTERM and gracefully shutdown the server after secondsToWait seconds.
+// waitForShutdownToExit will wait for interrupt signal SIGINT or SIGTERM and gracefully shutdown the server after secondsToWait seconds.
 func waitForShutdownToExit(srv *http.Server, secondsToWait time.Duration) {
 	interruptChan := make(chan os.Signal, 1)
 	signal.Notify(interruptChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
@@ -223,7 +386,7 @@ func waitForShutdownToExit(srv *http.Server, secondsToWait time.Duration) {
 	os.Exit(0)
 }
 
-//GoHttpServer is a struct type to store information related to all handlers of web server
+// GoHttpServer is a struct type to store information related to all handlers of web server
 type GoHttpServer struct {
 	listenAddress string
 	// later we will store here the connection to database
@@ -234,7 +397,7 @@ type GoHttpServer struct {
 	httpServer http.Server
 }
 
-//NewGoHttpServer is a constructor that initializes the server mux (routes) and all fields of the  GoHttpServer type
+// NewGoHttpServer is a constructor that initializes the server mux (routes) and all fields of the  GoHttpServer type
 func NewGoHttpServer(listenAddress string, logger *log.Logger) *GoHttpServer {
 	myServerMux := http.NewServeMux()
 	myServer := GoHttpServer{
@@ -326,6 +489,7 @@ func (s *GoHttpServer) getHealthHandler() http.HandlerFunc {
 		}
 	}
 }
+
 func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 	handlerName := "getMyDefaultHandler"
 
@@ -352,29 +516,46 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 	if err != nil {
 		s.logger.Printf("💥💥 ERROR: 'GetOsUptime() returned an error : %+#v'", err)
 	}
+	k8sVersion := ""
+	k8sCurrentNameSpace := ""
+	k8sUrl, err := GetKubernetesApiUrlFromEnv()
+	if err != nil {
+		s.logger.Printf("💥💥 ERROR: 'GetKubernetesApiUrlFromEnv() returned an error : %+#v'", err)
+	} else {
+		// here we can assume that we are inside a k8s container...
+		info, errConnInfo := GetKubernetesConnInfo(s.logger)
+		if errConnInfo.err != nil {
+			s.logger.Printf("💥💥 ERROR: 'GetKubernetesConnInfo() returned an error : %s : %+#v'", errConnInfo.msg, errConnInfo.err)
+		}
+		k8sVersion = info.Version
+		k8sCurrentNameSpace = info.CurrentNamespace
+	}
 
 	data := RuntimeInfo{
-		Hostname:           hostName,
-		Pid:                os.Getpid(),
-		PPid:               os.Getppid(),
-		Uid:                os.Getuid(),
-		Appname:            APP,
-		Version:            VERSION,
-		ParamName:          "_NO_PARAMETER_NAME_",
-		RemoteAddr:         "",
-		RequestId:          "",
-		GOOS:               runtime.GOOS,
-		GOARCH:             runtime.GOARCH,
-		Runtime:            runtime.Version(),
-		NumGoroutine:       strconv.FormatInt(int64(runtime.NumGoroutine()), 10),
-		OsReleaseName:      osReleaseInfo.Name,
-		OsReleaseVersion:   osReleaseInfo.Version,
-		OsReleaseVersionId: osReleaseInfo.VersionId,
-		NumCPU:             strconv.FormatInt(int64(runtime.NumCPU()), 10),
-		Uptime:             fmt.Sprintf("%s", time.Since(s.startTime)),
-		UptimeOs:           uptimeOS,
-		EnvVars:            os.Environ(),
-		Headers:            map[string][]string{},
+		Hostname:            hostName,
+		Pid:                 os.Getpid(),
+		PPid:                os.Getppid(),
+		Uid:                 os.Getuid(),
+		Appname:             APP,
+		Version:             VERSION,
+		ParamName:           "_NO_PARAMETER_NAME_",
+		RemoteAddr:          "",
+		RequestId:           "",
+		GOOS:                runtime.GOOS,
+		GOARCH:              runtime.GOARCH,
+		Runtime:             runtime.Version(),
+		NumGoroutine:        strconv.FormatInt(int64(runtime.NumGoroutine()), 10),
+		OsReleaseName:       osReleaseInfo.Name,
+		OsReleaseVersion:    osReleaseInfo.Version,
+		OsReleaseVersionId:  osReleaseInfo.VersionId,
+		NumCPU:              strconv.FormatInt(int64(runtime.NumCPU()), 10),
+		Uptime:              fmt.Sprintf("%s", time.Since(s.startTime)),
+		UptimeOs:            uptimeOS,
+		K8sApiUrl:           k8sUrl,
+		K8sVersion:          k8sVersion,
+		K8sCurrentNamespace: k8sCurrentNameSpace,
+		EnvVars:             os.Environ(),
+		Headers:             map[string][]string{},
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		remoteIp := r.RemoteAddr // ip address of the original request or the last proxy
@@ -456,7 +637,7 @@ func (s *GoHttpServer) getWaitHandler(secondsToSleep int) http.HandlerFunc {
 	}
 }
 
-//############# END HANDLERS
+// ############# END HANDLERS
 func main() {
 	listenAddr, err := GetPortFromEnv(defaultPort)
 	if err != nil {
