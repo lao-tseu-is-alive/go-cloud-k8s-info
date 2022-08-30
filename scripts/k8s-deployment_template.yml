@@ -8,7 +8,7 @@ kind: Namespace
 metadata:
   name: test-APP_NAME
   labels:
-    name: test
+    env: test
     app: APP_NAME
 ---
 apiVersion: v1
@@ -27,29 +27,35 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   namespace: test-APP_NAME
-  name: pod-reader
+  name: pod-reader-role
+  labels:
+    app: APP_NAME
 rules:
   - apiGroups: [""]  # "" indicates the core API group
-    resources: ["pods"]
+    resources: ["pods", "namespaces"]
     verbs: ["get", "watch", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: pod-reader
+  name: pod-reader-role-binding
+  labels:
+    app: APP_NAME
 subjects:
   - kind: Group
     name: system:serviceaccounts
     apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole
-  name: pod-reader
+  name: pod-reader-role
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: service-reader
+  name: service-reader-role
+  labels:
+    app: APP_NAME
 rules:
   - apiGroups: [""]
     resources: ["services"]
@@ -59,14 +65,16 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: service-reader
+  name: service-reader-role-binding
+  labels:
+    app: APP_NAME
 subjects:
   - kind: Group
     name: system:serviceaccounts
     apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole
-  name: service-reader
+  name: service-reader-role
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: v1
@@ -94,13 +102,15 @@ spec:
       port: 8000
       targetPort: 8000            # Should match the PORT env variable in deployment and containerPort that the Go application listens on
   selector:
-    app: APP_NAME         # Map any pod with label `app=go-hello-world` to this service
+    app: APP_NAME         # Map any pod with this label `app=APP_NAME` to this service
 ---
 apiVersion: apps/v1
 kind: Deployment                 # Type of Kubernetes resource
 metadata:
   name: APP_NAME           # Name of the Kubernetes resource
   namespace: test-APP_NAME
+  labels:
+    app: APP_NAME
 spec:
   replicas: 2                    # Number of pods to run at any given time
   selector:
@@ -112,8 +122,8 @@ spec:
         app: APP_NAME
     spec:                        # Spec for the container which will run in the Pod
       securityContext:           # https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-        runAsUser: 10222           # using a non privileged user
-        runAsGroup: 10222          # using the group 'gouser' created in Dockerfile in the Alpine image
+        runAsUser: 1221           # using a non privileged user
+        runAsGroup: 1221          # using the group 'gouser' created in Dockerfile
         fsGroup: 100             # by adding fsGroup field, all processes of the container are also part
                                  # of the supplementary group ID 100 (users).
         supplementalGroups:
@@ -125,8 +135,8 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true
-          runAsUser: 10222           # using the user 'gouser' created in Dockerfile in the Alpine image
-          runAsGroup: 10222          # using the group 'gouser' created in Dockerfile in the Alpine image
+          runAsUser: 1221           # using the user 'gouser' created in Dockerfile
+          runAsGroup: 1221          # using the group 'gouser' created in Dockerfile
           capabilities:
             drop:
               - 'ALL'

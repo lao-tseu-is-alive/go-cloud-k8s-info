@@ -1,14 +1,14 @@
 ---
 ### TEMPLATE FOR A SERVICE AND DEPLOYMENT ON KUBERNETES just substitute the next keywords with your own values
 ### go-cloud-k8s-info     : the name of your application or container image
-### v0.4.2  : the version of the app image to deploy
+### v0.4.3  : the version of the app image to deploy
 ### ghcr.io/lao-tseu-is-alive  : the prefix to your images in your container registry
 apiVersion: v1
 kind: Namespace
 metadata:
   name: test-go-cloud-k8s-info
   labels:
-    name: test
+    env: test
     app: go-cloud-k8s-info
 ---
 apiVersion: v1
@@ -18,38 +18,44 @@ metadata:
   namespace: test-go-cloud-k8s-info
 spec:
   hard:
-    requests.cpu: "1"
+    requests.cpu: 2000m
     requests.memory: 1Gi
-    limits.cpu: "2"
-    limits.memory: 2Gi
+    limits.cpu: 4000m
+    limits.memory: 4Gi
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   namespace: test-go-cloud-k8s-info
-  name: pod-reader
+  name: pod-reader-role
+  labels:
+    app: go-cloud-k8s-info
 rules:
   - apiGroups: [""]  # "" indicates the core API group
-    resources: ["pods"]
+    resources: ["pods", "namespaces"]
     verbs: ["get", "watch", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: pod-reader
+  name: pod-reader-role-binding
+  labels:
+    app: go-cloud-k8s-info
 subjects:
   - kind: Group
     name: system:serviceaccounts
     apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole
-  name: pod-reader
+  name: pod-reader-role
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: service-reader
+  name: service-reader-role
+  labels:
+    app: go-cloud-k8s-info
 rules:
   - apiGroups: [""]
     resources: ["services"]
@@ -59,14 +65,16 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: service-reader
+  name: service-reader-role-binding
+  labels:
+    app: go-cloud-k8s-info
 subjects:
   - kind: Group
     name: system:serviceaccounts
     apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole
-  name: service-reader
+  name: service-reader-role
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: v1
@@ -94,13 +102,15 @@ spec:
       port: 8000
       targetPort: 8000            # Should match the PORT env variable in deployment and containerPort that the Go application listens on
   selector:
-    app: go-cloud-k8s-info         # Map any pod with label `app=go-hello-world` to this service
+    app: go-cloud-k8s-info         # Map any pod with this label `app=go-cloud-k8s-info` to this service
 ---
 apiVersion: apps/v1
 kind: Deployment                 # Type of Kubernetes resource
 metadata:
   name: go-cloud-k8s-info           # Name of the Kubernetes resource
   namespace: test-go-cloud-k8s-info
+  labels:
+    app: go-cloud-k8s-info
 spec:
   replicas: 2                    # Number of pods to run at any given time
   selector:
@@ -112,21 +122,21 @@ spec:
         app: go-cloud-k8s-info
     spec:                        # Spec for the container which will run in the Pod
       securityContext:           # https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-        runAsUser: 10222           # using a non privileged user
-        runAsGroup: 10222          # using the group 'gouser' created in Dockerfile in the Alpine image
+        runAsUser: 1221           # using a non privileged user
+        runAsGroup: 1221          # using the group 'gouser' created in Dockerfile
         fsGroup: 100             # by adding fsGroup field, all processes of the container are also part
                                  # of the supplementary group ID 100 (users).
         supplementalGroups:
           - 100
       containers:
       - name: go-cloud-k8s-info
-        image: ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:v0.4.2
+        image: ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:v0.4.3
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true
-          runAsUser: 10222           # using the user 'gouser' created in Dockerfile in the Alpine image
-          runAsGroup: 10222          # using the group 'gouser' created in Dockerfile in the Alpine image
+          runAsUser: 1221           # using the user 'gouser' created in Dockerfile
+          runAsGroup: 1221          # using the group 'gouser' created in Dockerfile
           capabilities:
             drop:
               - 'ALL'
