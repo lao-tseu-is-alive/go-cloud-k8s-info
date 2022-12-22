@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	VERSION                = "0.4.3"
+	VERSION                = "0.4.4"
 	APP                    = "go-cloud-k8s-info"
 	defaultProtocol        = "http"
 	defaultPort            = 8080
@@ -72,6 +72,7 @@ type RuntimeInfo struct {
 	UptimeOs            string              `json:"uptime_os"`             // tells how long system was started based on /proc/uptime
 	K8sApiUrl           string              `json:"k8s_api_url"`           // url for k8s api based KUBERNETES_SERVICE_HOST
 	K8sVersion          string              `json:"k8s_version"`           // version of k8s cluster
+	K8sLatestVersion    string              `json:"k8s_latest_version"`    // latest version announced in https://kubernetes.io/
 	K8sCurrentNamespace string              `json:"k8s_current_namespace"` // k8s namespace of this container
 	EnvVars             []string            `json:"env_vars"`              // environment variables
 	Headers             map[string][]string `json:"headers"`               // received headers
@@ -331,6 +332,52 @@ func GetJsonFromUrl(url string, token string, caCert []byte, logger *log.Logger)
 	return string([]byte(body)), nil
 }
 
+func GetKubernetesLatestVersion(logger *log.Logger) (string, error) {
+	k8sUrl := "https://kubernetes.io/"
+	// Make an HTTP GET request to the Kubernetes releases page
+	// Create a new request using http
+	req, err := http.NewRequest("GET", k8sUrl, nil)
+
+	// add authorization header to the req
+	// req.Header.Add("Authorization", bearer)
+	// Send req using http Client
+	client := &http.Client{
+		Timeout: defaultReadTimeout,
+	}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		logger.Println("Error on response.\n[ERROR] -", err)
+		return fmt.Sprintf("GetKubernetesLatestVersion was unable to get content from %s, Error: %v", k8sUrl, err), err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Println("Error while reading the response bytes:", err)
+		return fmt.Sprintf("GetKubernetesLatestVersion got a problem reading the response from %s, Error: %v", k8sUrl, err), err
+	}
+	// Use a regular expression to extract the latest release number from the page
+	re := regexp.MustCompile(`(?m)href=.+?>v(\d+\.\d+)`)
+	matches := re.FindAllStringSubmatch(string(body), -1)
+	if matches == nil {
+		return fmt.Sprintf("GetKubernetesLatestVersion was unable to find latest release number from %s", k8sUrl), nil
+	}
+	// Print only the release numbers
+	maxVersion := 0.0
+	for _, match := range matches {
+		// fmt.Println(match[1])
+		if val, err := strconv.ParseFloat(match[1], 32); err == nil {
+			if val > maxVersion {
+				maxVersion = val
+			}
+		}
+	}
+	// latestRelease := matches[0]
+	// fmt.Printf("\nThe latest major release of Kubernetes is %T : %v+", latestRelease, latestRelease)
+	return fmt.Sprintf("Kubernetes latest major version: %2.2f", maxVersion), nil
+}
+
 func getHtmlHeader(title string) string {
 	return fmt.Sprintf("%s<title>%s</title></head>", htmlHeaderStart, title)
 }
@@ -531,6 +578,11 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 		k8sCurrentNameSpace = info.CurrentNamespace
 	}
 
+	latestK8sVersion, err := GetKubernetesLatestVersion(s.logger)
+	if err != nil {
+		s.logger.Printf("💥💥 ERROR: 'GetKubernetesLatestVersion() returned an error : %+#v'", err)
+	}
+
 	data := RuntimeInfo{
 		Hostname:            hostName,
 		Pid:                 os.Getpid(),
@@ -553,6 +605,7 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 		UptimeOs:            uptimeOS,
 		K8sApiUrl:           k8sUrl,
 		K8sVersion:          k8sVersion,
+		K8sLatestVersion:    latestK8sVersion,
 		K8sCurrentNamespace: k8sCurrentNameSpace,
 		EnvVars:             os.Environ(),
 		Headers:             map[string][]string{},
