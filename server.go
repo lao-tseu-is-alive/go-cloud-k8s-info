@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	VERSION                = "0.4.4"
+	VERSION                = "0.4.5"
 	APP                    = "go-cloud-k8s-info"
 	defaultProtocol        = "http"
 	defaultPort            = 8080
@@ -338,11 +338,16 @@ func GetKubernetesLatestVersion(logger *log.Logger) (string, error) {
 	// Create a new request using http
 	req, err := http.NewRequest("GET", k8sUrl, nil)
 
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
 	// add authorization header to the req
 	// req.Header.Add("Authorization", bearer)
 	// Send req using http Client
 	client := &http.Client{
-		Timeout: defaultReadTimeout,
+		Timeout:   defaultReadTimeout,
+		Transport: tr,
 	}
 	resp, err := client.Do(req)
 
