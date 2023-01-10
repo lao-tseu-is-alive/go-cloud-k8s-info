@@ -1,7 +1,7 @@
 ---
 ### TEMPLATE FOR A SERVICE AND DEPLOYMENT ON KUBERNETES just substitute the next keywords with your own values
 ### go-cloud-k8s-info     : the name of your application or container image
-### v0.4.5  : the version of the app image to deploy
+### v0.4.6  : the version of the app image to deploy
 ### ghcr.io/lao-tseu-is-alive  : the prefix to your images in your container registry
 apiVersion: v1
 kind: Namespace
@@ -34,6 +34,9 @@ rules:
   - apiGroups: [""]  # "" indicates the core API group
     resources: ["pods", "namespaces"]
     verbs: ["get", "watch", "list"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
