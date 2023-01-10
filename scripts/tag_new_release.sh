@@ -14,7 +14,7 @@ else
 fi
 echo "## APP: ${APP_NAME}, version: ${APP_VERSION} detected in file server.go"
 if [ "$(git diff --exit-code)" ]; then
-  echo "## 💥💥 ERROR: \"${APP_NAME} is DIRTY YOU MUST commit your code before doing a tag ${APP_VERSION} !\""
+  echo "## 💥💥 ERROR: \"${APP_NAME} source tree is DIRTY YOU MUST commit your code before doing a tag ${APP_VERSION} !\""
   git status
 else
   if [ $(git tag -l "v$APP_VERSION") ]; then
