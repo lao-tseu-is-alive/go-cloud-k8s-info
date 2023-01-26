@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	VERSION                = "0.4.7"
+	VERSION                = "0.4.8"
 	APP                    = "go-cloud-k8s-info"
 	defaultProtocol        = "http"
 	defaultPort            = 8080
@@ -629,6 +629,7 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 				if nameValue != "" {
 					data.ParamName = nameValue
 				}
+				data.Hostname, _ = os.Hostname()
 				data.RemoteAddr = remoteIp
 				data.Headers = r.Header
 				data.Uptime = fmt.Sprintf("%s", time.Since(s.startTime))
