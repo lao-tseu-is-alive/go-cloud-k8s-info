@@ -6,7 +6,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: test-go-cloud-k8s-info
+  name: go-testing
   labels:
     env: test
     app: go-cloud-k8s-info
@@ -15,7 +15,7 @@ apiVersion: v1
 kind: ResourceQuota
 metadata:
   name: compute-resources
-  namespace: test-go-cloud-k8s-info
+  namespace: go-testing
 spec:
   hard:
     requests.cpu: 2000m
@@ -26,7 +26,7 @@ spec:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  namespace: test-go-cloud-k8s-info
+  namespace: go-testing
   name: pod-reader-role
   labels:
     app: go-cloud-k8s-info
@@ -84,7 +84,7 @@ apiVersion: v1
 kind: Service                    # Type of kubernetes resource
 metadata:
   name: go-cloud-k8s-info-service   # Name of the resource
-  namespace: test-go-cloud-k8s-info
+  namespace: go-testing
   labels:     # The labels that will be applied
     app: go-cloud-k8s-info
   annotations:
@@ -111,7 +111,7 @@ apiVersion: apps/v1
 kind: Deployment                 # Type of Kubernetes resource
 metadata:
   name: go-cloud-k8s-info           # Name of the Kubernetes resource
-  namespace: test-go-cloud-k8s-info
+  namespace: go-testing
   labels:
     app: go-cloud-k8s-info
 spec:
