@@ -58,7 +58,7 @@ type testStruct struct {
 
 func TestErrorConfigError(t *testing.T) {
 	err := ErrorConfig{
-		err: errors.New("a brand ne error test"),
+		err: errors.New("a brand new error test"),
 		msg: "ERROR: This a test error.",
 	}
 	tests := []struct {
