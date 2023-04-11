@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -480,7 +481,7 @@ func TestGoHttpServerWaitHandler(t *testing.T) {
 				t.Fatal(err)
 			}
 			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
-			receivedJson, _ := ioutil.ReadAll(resp.Body)
+			receivedJson, _ := io.ReadAll(resp.Body)
 
 			if DEBUG {
 				fmt.Printf("WANTED   :%T - %#v\n", tt.wantBody, tt.wantBody)

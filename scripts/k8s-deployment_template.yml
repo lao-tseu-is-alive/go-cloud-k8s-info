@@ -157,6 +157,13 @@ metadata:
     app: APP_NAME
 spec:
   replicas: 2                    # Number of pods to run at any given time
+  revisionHistoryLimit: 5        # The number of old ReplicaSets to retain to allow rollback
+  minReadySeconds: 5             # Minimum number of seconds for which a newly created pod should be ready without any of its container crashing, for it to be considered available. Defaults to 0 (pod will be considered available as soon as it is ready)
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 2               # maximum number of pods that can be scheduled above the desired number of pods.
   selector:
     matchLabels:
       app: APP_NAME              # This deployment applies to any Pods matching the specified label

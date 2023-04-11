@@ -4,7 +4,7 @@ echo " enter the next command replacing emojivoto with the namepace"
 k get namespace emojivoto -o json > tmp.json
 echo "edit the file and remove the arrays values inside the finalizers array (usually you should remove the kubernetes value)"
 vim tmp.json 
-echo "now isue k proxy --port 8080 on another terminal window"
+echo "now type : k proxy --port 8080 on another terminal window"
 echo " and then apply your modified json to the correct endpoint (replace emojivoto with your own dleted namespace)"
 curl -k -H "Content-Type: application/json" -X PUT --data-binary @tmp.json http://127.0.0.1:8080/api/v1/namespaces/emojivoto/finalize
 k get namespaces 
