@@ -30,7 +30,7 @@ FROM scratch
 # It is a best practice to run containers as non-root users
 # https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
 # https://docs.docker.com/engine/reference/builder/#user
-USER 1221:1221
+USER 12121:12121
 WORKDIR /goapp
 
 # Copy the Pre-built binary file from the previous stage
