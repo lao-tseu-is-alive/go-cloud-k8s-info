@@ -25,3 +25,9 @@ go_admin_credentials_secrets
 /document/KPLABS CKA D7 - Storage.docx
 /document/KPLABS Course - CKA D1 Core Concepts.docx
 /document/KPLABS Course - CKA D2 Workload & Scheduling.docx
+/bin/
+/certificates/lencr_org.ca
+/certificates/lencr_org.cert
+/certificates/lencr_org.der
+/certificates/lencr_org_cert_chain.pkcs
+/certificates/lencr_org_single_cert.pkcs
