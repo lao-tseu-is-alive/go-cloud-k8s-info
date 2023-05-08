@@ -32,7 +32,7 @@ FROM scratch
 # https://docs.docker.com/engine/reference/builder/#user
 USER 12121:12121
 WORKDIR /goapp
-
+COPY certificates/isrg-root-x1-cross-signed.pem /goapp/certificates/
 # Copy the Pre-built binary file from the previous stage
 COPY --from=builder /app/go-info-server .
 

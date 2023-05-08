@@ -35,6 +35,7 @@ const (
 	defaultReadTimeout     = 10 * time.Second // max time to read request from the client
 	defaultWriteTimeout    = 10 * time.Second // max time to write response to the client
 	defaultIdleTimeout     = 2 * time.Minute  // max time for connections using TCP Keep-Alive
+	caCertPath             = "certificates/isrg-root-x1-cross-signed.pem"
 	defaultNotFound        = "🤔 ℍ𝕞𝕞... 𝕤𝕠𝕣𝕣𝕪 :【𝟜𝟘𝟜 : ℙ𝕒𝕘𝕖 ℕ𝕠𝕥 𝔽𝕠𝕦𝕟𝕕】🕳️ 🔥"
 	htmlHeaderStart        = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css"/>`
 	charsetUTF8            = "charset=UTF-8"
@@ -341,10 +342,24 @@ func GetKubernetesLatestVersion(logger *log.Logger) (string, error) {
 	// Make an HTTP GET request to the Kubernetes releases page
 	// Create a new request using http
 	req, err := http.NewRequest("GET", k8sUrl, nil)
-
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	if err != nil {
+		logger.Printf("Error on http.NewRequest [ERROR: %v]\n", err)
+		return "", err
 	}
+	caCert, err := os.ReadFile(caCertPath)
+	if err != nil {
+		logger.Printf("Error on ReadFile(caCertPath) [ERROR: %v]\n", err)
+		return "", err
+	}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			RootCAs: caCertPool,
+		},
+	}
+
+	//tr := &http.Transport{ TLSClientConfig: &tls.Config{InsecureSkipVerify: true} }
 
 	// add authorization header to the req
 	// req.Header.Add("Authorization", bearer)
@@ -353,6 +368,7 @@ func GetKubernetesLatestVersion(logger *log.Logger) (string, error) {
 		Timeout:   defaultReadTimeout,
 		Transport: tr,
 	}
+
 	resp, err := client.Do(req)
 
 	if err != nil {
@@ -389,7 +405,7 @@ func GetKubernetesLatestVersion(logger *log.Logger) (string, error) {
 	}
 	// latestRelease := matches[0]
 	// fmt.Printf("\nThe latest major release of Kubernetes is %T : %v+", latestRelease, latestRelease)
-	return fmt.Sprintf("Kubernetes latest major version: %2.2f", maxVersion), nil
+	return fmt.Sprintf("%2.2f", maxVersion), nil
 }
 
 func getHtmlHeader(title string) string {
