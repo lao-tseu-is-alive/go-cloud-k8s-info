@@ -1,0 +1,43 @@
+---
+### go-cloud-k8s-info v0.4.11  : the version of the app image to deploy
+### ghcr.io/lao-tseu-is-alive  : the prefix to your images in your container registry
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: go-cloud-k8s-info-ingress
+  namespace: go-testing
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+
+spec:
+  rules:
+    - host: go-cloud-k8s-info.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: go-cloud-k8s-info-service
+                port:
+                  number: 8000
+---
+## with this service you can connect from another pod with
+## curl http://go-cloud-k8s-info-service.go-testing:8000
+apiVersion: v1
+kind: Service                    # Type of kubernetes resource
+metadata:
+  name: go-cloud-k8s-info-service   # Name of the resource
+  namespace: go-testing
+  labels:     # The labels that will be applied
+    app: go-cloud-k8s-info
+spec:
+  type: NodePort                 # A port is opened on each node in your cluster via Kube proxy.
+  # https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer
+  ports:                         # Take incoming HTTP requests on this port (exposed) and forward them to the targetPort of container
+    - name: http
+      port: 8000
+      targetPort: 8000            # Should match the PORT env variable in deployment and containerPort that the Go application listens on
+  selector:
+    app: go-cloud-k8s-info         # Map any pod with this label `app=go-cloud-k8s-info` to this service
+---
