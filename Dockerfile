@@ -1,5 +1,5 @@
 # Start from the latest golang base image
-FROM golang:1-alpine3.15 as builder
+FROM golang:1.21-alpine3.18 as builder
 
 # Add Maintainer Info
 LABEL maintainer="cgil"
