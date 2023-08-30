@@ -24,6 +24,11 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o go-info-server .
 
 
 ######## Start a new stage  #######
+# using from scratch for size and security reason
+# Containers Are Not VMs! Which Base Container (Docker) Images Should We Use?
+# https://blog.baeke.info/2021/03/28/distroless-or-scratch-for-go-apps/
+# https://github.com/vfarcic/base-container-images-demo
+# https://youtu.be/82ZCJw9poxM
 FROM scratch
 # to comply with security best practices
 # Running containers with 'root' user can lead to a container escape situation (the default with Docker...).
