@@ -28,7 +28,7 @@ import (
 const (
 	VERSION                = "0.4.12"
 	APP                    = "go-cloud-k8s-info"
-	APP_CAMEL_CASE         = "goCloudK8sInfo"
+	AppCamelCase           = "goCloudK8sInfo"
 	defaultProtocol        = "http"
 	defaultPort            = 8080
 	defaultServerIp        = ""
@@ -55,8 +55,15 @@ const (
 
 var rootPathGetCounter = prometheus.NewCounter(
 	prometheus.CounterOpts{
-		Name: fmt.Sprintf("%s_root_get_request_count", APP_CAMEL_CASE),
-		Help: fmt.Sprintf("Number	 of GET request handled by %s default root handler", APP_CAMEL_CASE),
+		Name: fmt.Sprintf("%s_root_get_request_count", AppCamelCase),
+		Help: fmt.Sprintf("Number of GET request handled by %s default root handler", AppCamelCase),
+	},
+)
+
+var rootPathNotFoundCounter = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Name: fmt.Sprintf("%s_root_not_found_request_count", AppCamelCase),
+		Help: fmt.Sprintf("Number of page not found handled by %s default root handler", AppCamelCase),
 	},
 )
 
@@ -694,6 +701,7 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 				s.logger.Printf("SUCCESS: [%s] path:'%s', from IP: [%s]\n", handlerName, requestedUrlPath, remoteIp)
 			} else {
 				w.WriteHeader(http.StatusNotFound)
+				rootPathNotFoundCounter.Inc()
 				n, err := fmt.Fprintf(w, getHtmlPage(defaultNotFound))
 				if err != nil {
 					s.logger.Printf("💥💥 ERROR: [%s] Not Found was unable to Fprintf. path:'%s', from IP: [%s], send_bytes:%d\n", handlerName, requestedUrlPath, remoteIp, n)
@@ -759,6 +767,7 @@ func main() {
 	l := log.New(os.Stdout, fmt.Sprintf("HTTP_SERVER_%s ", APP), log.Ldate|log.Ltime|log.Lshortfile)
 	l.Printf("INFO: 'Starting %s version:%s HTTP server on port %s'", APP, VERSION, listenAddr)
 	prometheus.MustRegister(rootPathGetCounter)
+	prometheus.MustRegister(rootPathNotFoundCounter)
 	server := NewGoHttpServer(listenAddr, l)
 	server.StartServer()
 }
