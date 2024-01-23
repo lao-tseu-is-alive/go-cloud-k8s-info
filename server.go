@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"github.com/rs/xid"
 	"io"
 	"io/fs"
 	"log"
@@ -19,8 +20,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-
-	"github.com/rs/xid"
 )
 
 const (
