@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	VERSION                = "0.4.12"
+	VERSION                = "0.4.13"
 	APP                    = "go-cloud-k8s-info"
 	AppCamelCase           = "goCloudK8sInfo"
 	defaultProtocol        = "http"
@@ -609,7 +609,10 @@ func NewGoHttpServer(listenAddress string, logger *log.Logger) *GoHttpServer {
 // (*GoHttpServer) routes initializes all the handlers paths of this web server, it is called inside the NewGoHttpServer constructor
 func (s *GoHttpServer) routes() {
 
-	s.router.Handle("/", s.getMyDefaultHandler())
+	s.router.Handle("/", NewMiddleware(
+		s.registry, nil).
+		WrapHandler("/", s.getMyDefaultHandler()),
+	)
 	s.router.Handle("/time", s.getTimeHandler())
 	s.router.Handle("/wait", s.getWaitHandler(defaultSecondsToSleep))
 	s.router.Handle("/readiness", s.getReadinessHandler())
@@ -705,8 +708,9 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 	osReleaseInfo, errConf := GetOsInfo()
 
 	if errConf.err != nil {
-		switch errConf.err.(type) {
-		case *fs.PathError:
+		var pathError *fs.PathError
+		switch {
+		case errors.As(errConf.err, &pathError):
 			s.logger.Printf("NOTICE: 'GetOsInfo() dif not find os-release : %v'", errConf.err)
 		default:
 			s.logger.Printf("💥💥 ERROR: 'GetOsInfo() returned an error : %+#v'", errConf.err)
