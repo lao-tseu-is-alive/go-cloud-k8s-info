@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/xid"
 	"io"
@@ -66,6 +68,83 @@ var rootPathNotFoundCounter = prometheus.NewCounter(
 		Help: fmt.Sprintf("Number of page not found handled by %s default root handler", AppCamelCase),
 	},
 )
+
+type Middleware interface {
+	// WrapHandler wraps the given HTTP handler for instrumentation.
+	WrapHandler(handlerName string, handler http.Handler) http.HandlerFunc
+}
+
+type middleware struct {
+	buckets  []float64
+	registry prometheus.Registerer
+}
+
+// WrapHandler wraps the given HTTP handler for instrumentation:
+// It registers four metric collectors (if not already done) and reports HTTP
+// metrics to the (newly or already) registered collectors.
+// Each has a constant label named "handler" with the provided handlerName as
+// value.
+func (m *middleware) WrapHandler(handlerName string, handler http.Handler) http.HandlerFunc {
+	reg := prometheus.WrapRegistererWith(prometheus.Labels{"handler": handlerName}, m.registry)
+
+	requestsTotal := promauto.With(reg).NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_requests_total",
+			Help: "Tracks the number of HTTP requests.",
+		}, []string{"method", "code"},
+	)
+	requestDuration := promauto.With(reg).NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "http_request_duration_seconds",
+			Help:    "Tracks the latencies for HTTP requests.",
+			Buckets: m.buckets,
+		},
+		[]string{"method", "code"},
+	)
+	requestSize := promauto.With(reg).NewSummaryVec(
+		prometheus.SummaryOpts{
+			Name: "http_request_size_bytes",
+			Help: "Tracks the size of HTTP requests.",
+		},
+		[]string{"method", "code"},
+	)
+	responseSize := promauto.With(reg).NewSummaryVec(
+		prometheus.SummaryOpts{
+			Name: "http_response_size_bytes",
+			Help: "Tracks the size of HTTP responses.",
+		},
+		[]string{"method", "code"},
+	)
+
+	// Wraps the provided http.Handler to observe the request result with the provided metrics.
+	base := promhttp.InstrumentHandlerCounter(
+		requestsTotal,
+		promhttp.InstrumentHandlerDuration(
+			requestDuration,
+			promhttp.InstrumentHandlerRequestSize(
+				requestSize,
+				promhttp.InstrumentHandlerResponseSize(
+					responseSize,
+					handler,
+				),
+			),
+		),
+	)
+
+	return base.ServeHTTP
+}
+
+// NewMiddleware returns a Middleware interface.
+func NewMiddleware(registry prometheus.Registerer, buckets []float64) Middleware {
+	if buckets == nil {
+		buckets = prometheus.ExponentialBuckets(0.1, 1.5, 5)
+	}
+
+	return &middleware{
+		buckets:  buckets,
+		registry: registry,
+	}
+}
 
 type RuntimeInfo struct {
 	Hostname            string              `json:"hostname"`              // host name reported by the kernel.
@@ -487,6 +566,7 @@ type GoHttpServer struct {
 	//DB  *db.Conn
 	logger     *log.Logger
 	router     *http.ServeMux
+	registry   *prometheus.Registry
 	startTime  time.Time
 	httpServer http.Server
 }
@@ -494,10 +574,23 @@ type GoHttpServer struct {
 // NewGoHttpServer is a constructor that initializes the server mux (routes) and all fields of the  GoHttpServer type
 func NewGoHttpServer(listenAddress string, logger *log.Logger) *GoHttpServer {
 	myServerMux := http.NewServeMux()
+	// Create non-global registry.
+	registry := prometheus.NewRegistry()
+
+	// Add go runtime metrics and process collectors.
+	registry.MustRegister(
+		collectors.NewGoCollector(),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
+	)
+
+	registry.MustRegister(rootPathGetCounter)
+	registry.MustRegister(rootPathNotFoundCounter)
+
 	myServer := GoHttpServer{
 		listenAddress: listenAddress,
 		logger:        logger,
 		router:        myServerMux,
+		registry:      registry,
 		startTime:     time.Now(),
 		httpServer: http.Server{
 			Addr:         listenAddress,       // configure the bind address
@@ -515,13 +608,19 @@ func NewGoHttpServer(listenAddress string, logger *log.Logger) *GoHttpServer {
 
 // (*GoHttpServer) routes initializes all the handlers paths of this web server, it is called inside the NewGoHttpServer constructor
 func (s *GoHttpServer) routes() {
+
 	s.router.Handle("/", s.getMyDefaultHandler())
 	s.router.Handle("/time", s.getTimeHandler())
 	s.router.Handle("/wait", s.getWaitHandler(defaultSecondsToSleep))
 	s.router.Handle("/readiness", s.getReadinessHandler())
 	s.router.Handle("/health", s.getHealthHandler())
 	//expose the default prometheus metrics for Go applications
-	s.router.Handle("/metrics", promhttp.Handler())
+	s.router.Handle("/metrics", NewMiddleware(
+		s.registry, nil).
+		WrapHandler("/metrics", promhttp.HandlerFor(
+			s.registry,
+			promhttp.HandlerOpts{}),
+		))
 
 	//s.router.Handle("/hello", s.getHelloHandler())
 }
@@ -766,8 +865,6 @@ func main() {
 	listenAddr = defaultServerIp + listenAddr
 	l := log.New(os.Stdout, fmt.Sprintf("HTTP_SERVER_%s ", APP), log.Ldate|log.Ltime|log.Lshortfile)
 	l.Printf("INFO: 'Starting %s version:%s HTTP server on port %s'", APP, VERSION, listenAddr)
-	prometheus.MustRegister(rootPathGetCounter)
-	prometheus.MustRegister(rootPathNotFoundCounter)
 	server := NewGoHttpServer(listenAddr, l)
 	server.StartServer()
 }
