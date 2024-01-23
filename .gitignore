@@ -31,3 +31,7 @@ go_admin_credentials_secrets
 /certificates/lencr_org.der
 /certificates/lencr_org_cert_chain.pkcs
 /certificates/lencr_org_single_cert.pkcs
+/tmp/goaccess-1687436961802.json
+/tmp/goaccess-1687438652428.json
+/tmp/goaccess-1687438712532.json
+/tmp/goaccess-1687439163482.json

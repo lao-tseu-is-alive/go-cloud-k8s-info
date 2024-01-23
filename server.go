@@ -6,7 +6,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/xid"
 	"io"
 	"io/fs"
@@ -25,6 +28,7 @@ import (
 const (
 	VERSION                = "0.4.12"
 	APP                    = "go-cloud-k8s-info"
+	APP_CAMEL_CASE         = "goCloudK8sInfo"
 	defaultProtocol        = "http"
 	defaultPort            = 8080
 	defaultServerIp        = ""
@@ -47,6 +51,13 @@ const (
 	defaultUnknown     = "_UNKNOWN_"
 	formatTraceRequest = "TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n"
 	formatErrRequest   = "ERROR: Http method not allowed [%s] %s  path:'%s', RemoteAddrIP: [%s]\n"
+)
+
+var rootPathGetCounter = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Name: fmt.Sprintf("%s_root_get_request_count", APP_CAMEL_CASE),
+		Help: fmt.Sprintf("Number	 of GET request handled by %s default root handler", APP_CAMEL_CASE),
+	},
 )
 
 type RuntimeInfo struct {
@@ -502,6 +513,8 @@ func (s *GoHttpServer) routes() {
 	s.router.Handle("/wait", s.getWaitHandler(defaultSecondsToSleep))
 	s.router.Handle("/readiness", s.getReadinessHandler())
 	s.router.Handle("/health", s.getHealthHandler())
+	//expose the default prometheus metrics for Go applications
+	s.router.Handle("/metrics", promhttp.Handler())
 
 	//s.router.Handle("/hello", s.getHelloHandler())
 }
@@ -513,7 +526,7 @@ func (s *GoHttpServer) StartServer() {
 	go func() {
 		s.logger.Printf("INFO: Starting http server listening at %s://%s/", defaultProtocol, s.listenAddress)
 		err := s.httpServer.ListenAndServe()
-		if err != nil && err != http.ErrServerClosed {
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			s.logger.Fatalf("💥💥 ERROR: 'Could not listen on %q: %s'\n", s.listenAddress, err)
 		}
 	}()
@@ -573,7 +586,6 @@ func (s *GoHttpServer) getHealthHandler() http.HandlerFunc {
 		}
 	}
 }
-
 func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 	handlerName := "getMyDefaultHandler"
 
@@ -671,6 +683,7 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 				}
 				data.UptimeOs = uptimeOS
 				data.RequestId = guid.String()
+				rootPathGetCounter.Inc()
 				s.jsonResponse(w, data)
 				/*n, err := fmt.Fprintf(w, getHtmlPage(defaultMessage))
 				if err != nil {
@@ -745,6 +758,7 @@ func main() {
 	listenAddr = defaultServerIp + listenAddr
 	l := log.New(os.Stdout, fmt.Sprintf("HTTP_SERVER_%s ", APP), log.Ldate|log.Ltime|log.Lshortfile)
 	l.Printf("INFO: 'Starting %s version:%s HTTP server on port %s'", APP, VERSION, listenAddr)
+	prometheus.MustRegister(rootPathGetCounter)
 	server := NewGoHttpServer(listenAddr, l)
 	server.StartServer()
 }
