@@ -176,6 +176,7 @@ spec:
       # comment the two next lines if you do not have worker nodes (rancher-desktop)
       nodeSelector:
         node-type: worker
+      automountServiceAccountToken: false
       securityContext:           # https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
         seccompProfile:
           type: RuntimeDefault   # https://kubernetes.io/docs/tutorials/security/seccomp/

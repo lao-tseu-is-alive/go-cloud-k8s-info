@@ -39,6 +39,7 @@ spec:
       labels:                    # The labels that will be applied to all the pods in this deployment
         app: go-info-server
     spec:                        # Spec for the container which will run in the Pod
+      automountServiceAccountToken: false
       securityContext:           # https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
         runAsUser: 10222           # using a non privileged user
         runAsGroup: 10222          # using the group 'gouser' created in Dockerfile in the Alpine image
@@ -48,7 +49,7 @@ spec:
           - 100
       containers:
       - name: go-info-server
-        image: ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:v0.4.1
+        image: ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:v0.4.15
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false

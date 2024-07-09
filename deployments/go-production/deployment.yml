@@ -104,6 +104,7 @@ spec:
       labels:                    # The labels that will be applied to all the pods in this deployment
         app: go-cloud-k8s-info
     spec:                        # Spec for the Pod base config, securityContext can be overridden in container
+      automountServiceAccountToken: false
       securityContext:           # https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
         seccompProfile:
           type: RuntimeDefault   # https://kubernetes.io/docs/tutorials/security/seccomp/
@@ -115,7 +116,7 @@ spec:
           - 100
       containers:
       - name: go-cloud-k8s-info
-        image: ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:v0.4.10
+        image: ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:v0.4.15
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false

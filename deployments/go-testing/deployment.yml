@@ -176,6 +176,7 @@ spec:
       # comment the two next lines if you do not have worker nodes (rancher-desktop)
       nodeSelector:
         node-type: worker
+      automountServiceAccountToken: false
       securityContext:           # https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
         seccompProfile:
           type: RuntimeDefault   # https://kubernetes.io/docs/tutorials/security/seccomp/
@@ -187,7 +188,7 @@ spec:
           - 100
       containers:
       - name: go-cloud-k8s-info
-        image: ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:v0.4.13
+        image: ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:v0.4.15
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false
