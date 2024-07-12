@@ -1,6 +1,6 @@
 module github.com/lao-tseu-is-alive/go-cloud-k8s-info
 
-go 1.20
+go 1.22
 
 require (
 	github.com/prometheus/client_golang v1.18.0

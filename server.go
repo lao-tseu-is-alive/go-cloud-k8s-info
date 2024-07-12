@@ -50,9 +50,10 @@ const (
 	httpErrMethodNotAllow  = "ERROR: Http method not allowed"
 	initCallMsg            = "INITIAL CALL TO %s()\n"
 	// defaultUnknown         = "¯\\_( ͡° ͜ʖ ͡°)_/¯"
-	defaultUnknown     = "_UNKNOWN_"
-	formatTraceRequest = "TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n"
-	formatErrRequest   = "ERROR: Http method not allowed [%s] %s  path:'%s', RemoteAddrIP: [%s]\n"
+	defaultUnknown             = "_UNKNOWN_"
+	defaultNotFoundDescription = "this is a 404 page not found"
+	formatTraceRequest         = "TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n"
+	formatErrRequest           = "ERROR: Http method not allowed [%s] %s  path:'%s', RemoteAddrIP: [%s]\n"
 )
 
 var rootPathGetCounter = prometheus.NewCounter(
@@ -469,7 +470,7 @@ func GetKubernetesLatestVersion(logger *log.Logger) (string, error) {
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-
+			logger.Println("Error on Body.Close().\n[ERROR] -", err)
 		}
 	}(resp.Body)
 
@@ -499,13 +500,13 @@ func GetKubernetesLatestVersion(logger *log.Logger) (string, error) {
 	return fmt.Sprintf("%2.2f", maxVersion), nil
 }
 
-func getHtmlHeader(title string) string {
-	return fmt.Sprintf("%s<title>%s</title></head>", htmlHeaderStart, title)
+func getHtmlHeader(title string, description string) string {
+	return fmt.Sprintf("%s<meta name=\"description\" content=\"%s\"><title>%s</title></head>", htmlHeaderStart, description, title)
 }
 
-func getHtmlPage(title string) string {
-	return getHtmlHeader(title) +
-		fmt.Sprintf("\n<body><div class=\"container\"><h3>%s</h3></div></body></html>", title)
+func getHtmlPage(title string, description string) string {
+	return getHtmlHeader(title, description) +
+		fmt.Sprintf("\n<body><div class=\"container\"><h4>%s</h4></div></body></html>", title)
 }
 
 // WaitForHttpServer attempts to establish a TCP connection to listenAddress
@@ -603,24 +604,29 @@ func NewGoHttpServer(listenAddress string, logger *log.Logger) *GoHttpServer {
 
 // (*GoHttpServer) routes initializes all the handlers paths of this web server, it is called inside the NewGoHttpServer constructor
 func (s *GoHttpServer) routes() {
-
-	s.router.Handle("/", NewMiddleware(
+	// using new server Mux in Go 1.22 https://pkg.go.dev/net/http#ServeMux
+	s.router.Handle("GET /{$}", NewMiddleware(
 		s.registry, nil).
-		WrapHandler("/", s.getMyDefaultHandler()),
+		WrapHandler("GET /$", s.getMyDefaultHandler()),
 	)
-	s.router.Handle("/time", s.getTimeHandler())
-	s.router.Handle("/wait", s.getWaitHandler(defaultSecondsToSleep))
-	s.router.Handle("/readiness", s.getReadinessHandler())
-	s.router.Handle("/health", s.getHealthHandler())
+	s.router.Handle("GET /time", s.getTimeHandler())
+	s.router.Handle("GET /wait", s.getWaitHandler(defaultSecondsToSleep))
+	s.router.Handle("GET /readiness", s.getReadinessHandler())
+	s.router.Handle("GET /health", s.getHealthHandler())
 	//expose the default prometheus metrics for Go applications
-	s.router.Handle("/metrics", NewMiddleware(
+	s.router.Handle("GET /metrics", NewMiddleware(
 		s.registry, nil).
-		WrapHandler("/metrics", promhttp.HandlerFor(
+		WrapHandler("GET /metrics", promhttp.HandlerFor(
 			s.registry,
 			promhttp.HandlerOpts{}),
 		))
 
-	//s.router.Handle("/hello", s.getHelloHandler())
+	// s.router.Handle("/hello", s.getHelloHandler())
+}
+
+// AddRoute   adds a handler for this web server
+func (s *GoHttpServer) AddRoute(pathPattern string, handler http.Handler) {
+	s.router.Handle(pathPattern, handler)
 }
 
 // StartServer initializes all the handlers paths of this web server, it is called inside the NewGoHttpServer constructor
@@ -671,11 +677,7 @@ func (s *GoHttpServer) getReadinessHandler() http.HandlerFunc {
 	s.logger.Printf(initCallMsg, handlerName)
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Printf(formatTraceRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
-		if r.Method == http.MethodGet {
-			w.WriteHeader(http.StatusOK)
-		} else {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-		}
+		w.WriteHeader(http.StatusOK)
 	}
 }
 func (s *GoHttpServer) getHealthHandler() http.HandlerFunc {
@@ -683,11 +685,7 @@ func (s *GoHttpServer) getHealthHandler() http.HandlerFunc {
 	s.logger.Printf(initCallMsg, handlerName)
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Printf(formatTraceRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
-		if r.Method == http.MethodGet {
-			w.WriteHeader(http.StatusOK)
-		} else {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-		}
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -786,66 +784,69 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 		guid := xid.New()
 		s.logger.Printf("INFO: 'Request ID: %s'\n", guid.String())
 		s.logger.Printf(formatTraceRequest, handlerName, r.Method, requestedUrlPath, remoteIp)
-		switch r.Method {
-		case http.MethodGet:
-			if len(strings.TrimSpace(requestedUrlPath)) == 0 || requestedUrlPath == defaultServerPath {
-				query := r.URL.Query()
-				nameValue := query.Get("name")
-				if nameValue != "" {
-					data.ParamName = nameValue
-				}
-				data.Hostname, _ = os.Hostname()
-				data.RemoteAddr = remoteIp
-				data.Headers = r.Header
-				data.Uptime = fmt.Sprintf("%s", time.Since(s.startTime))
-				uptimeOS, err := GetOsUptime()
-				if err != nil {
-					s.logger.Printf("💥💥 ERROR: 'GetOsUptime() returned an error : %+#v'", err)
-				}
-				data.UptimeOs = uptimeOS
-				data.RequestId = guid.String()
-				rootPathGetCounter.Inc()
-				s.jsonResponse(w, data)
-				/*n, err := fmt.Fprintf(w, getHtmlPage(defaultMessage))
-				if err != nil {
-					s.logger.Printf("💥💥 ERROR: [%s] was unable to Fprintf. path:'%s', from IP: [%s], send_bytes:%d'\n", handlerName, requestedUrlPath, remoteIp, n)
-					http.Error(w, "Internal server error. myDefaultHandler was unable to Fprintf", http.StatusInternalServerError)
-					return
-				}*/
-				s.logger.Printf("SUCCESS: [%s] path:'%s', from IP: [%s]\n", handlerName, requestedUrlPath, remoteIp)
-			} else {
-				w.WriteHeader(http.StatusNotFound)
-				rootPathNotFoundCounter.Inc()
-				n, err := fmt.Fprintf(w, getHtmlPage(defaultNotFound))
-				if err != nil {
-					s.logger.Printf("💥💥 ERROR: [%s] Not Found was unable to Fprintf. path:'%s', from IP: [%s], send_bytes:%d\n", handlerName, requestedUrlPath, remoteIp, n)
-					http.Error(w, "Internal server error. myDefaultHandler was unable to Fprintf", http.StatusInternalServerError)
-					return
-				}
-			}
-		default:
-			s.logger.Printf(formatErrRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
-			http.Error(w, httpErrMethodNotAllow, http.StatusMethodNotAllowed)
+		query := r.URL.Query()
+		nameValue := query.Get("name")
+		if nameValue != "" {
+			data.ParamName = nameValue
+		}
+		data.Hostname, _ = os.Hostname()
+		data.RemoteAddr = remoteIp
+		data.Headers = r.Header
+		data.Uptime = fmt.Sprintf("%s", time.Since(s.startTime))
+		uptimeOS, err := GetOsUptime()
+		if err != nil {
+			s.logger.Printf("💥💥 ERROR: 'GetOsUptime() returned an error : %+#v'", err)
+		}
+		data.UptimeOs = uptimeOS
+		data.RequestId = guid.String()
+		rootPathGetCounter.Inc()
+		s.jsonResponse(w, data)
+		s.logger.Printf("SUCCESS: [%s] path:'%s', from IP: [%s]\n", handlerName, requestedUrlPath, remoteIp)
+
+	}
+}
+
+func (s *GoHttpServer) getHandlerNotFound() http.HandlerFunc {
+	handlerName := "getHandlerNotFound"
+	s.logger.Printf(initCallMsg, handlerName)
+	return func(w http.ResponseWriter, r *http.Request) {
+		s.logger.Printf(formatErrRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
+		w.WriteHeader(http.StatusNotFound)
+		rootPathNotFoundCounter.Inc()
+		n, err := fmt.Fprintf(w, getHtmlPage(defaultNotFound, defaultNotFoundDescription))
+		if err != nil {
+			s.logger.Printf("💥💥 ERROR: [%s] Not Found was unable to Fprintf. path:'%s', from IP: [%s], send_bytes:%d\n", handlerName, r.URL.Path, r.RemoteAddr, n)
+			http.Error(w, "Internal server error. myDefaultHandler was unable to Fprintf", http.StatusInternalServerError)
 		}
 	}
 }
+
+func (s *GoHttpServer) getHandlerStaticPage(title string, descr string) http.HandlerFunc {
+	handlerName := fmt.Sprintf("getHandlerStaticPage[%s]", title)
+	s.logger.Printf(initCallMsg, handlerName)
+	return func(w http.ResponseWriter, r *http.Request) {
+		s.logger.Printf(formatErrRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
+		w.WriteHeader(http.StatusOK)
+		n, err := fmt.Fprintf(w, getHtmlPage(title, descr))
+		if err != nil {
+			s.logger.Printf("💥💥 ERROR: [%s]  was unable to Fprintf. path:'%s', from IP: [%s], send_bytes:%d\n", handlerName, r.URL.Path, r.RemoteAddr, n)
+			http.Error(w, "Internal server error. getHandlerStaticPage was unable to Fprintf", http.StatusInternalServerError)
+		}
+	}
+}
+
 func (s *GoHttpServer) getTimeHandler() http.HandlerFunc {
 	handlerName := "getTimeHandler"
 	s.logger.Printf(initCallMsg, handlerName)
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Printf(formatTraceRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
-		if r.Method == http.MethodGet {
-			now := time.Now()
-			w.Header().Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
-			w.WriteHeader(http.StatusOK)
-			_, err := fmt.Fprintf(w, "{\"time\":\"%s\"}", now.Format(time.RFC3339))
-			if err != nil {
-				s.logger.Printf("Error doing fmt.Fprintf err: %s", err)
-				return
-			}
-		} else {
-			s.logger.Printf(formatErrRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
-			http.Error(w, httpErrMethodNotAllow, http.StatusMethodNotAllowed)
+		now := time.Now()
+		w.Header().Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
+		w.WriteHeader(http.StatusOK)
+		_, err := fmt.Fprintf(w, "{\"time\":\"%s\"}", now.Format(time.RFC3339))
+		if err != nil {
+			s.logger.Printf("Error doing fmt.Fprintf err: %s", err)
+			return
 		}
 	}
 }
@@ -881,5 +882,6 @@ func main() {
 	l := log.New(os.Stdout, fmt.Sprintf("HTTP_SERVER_%s ", APP), log.Ldate|log.Ltime|log.Lshortfile)
 	l.Printf("INFO: 'Starting %s version:%s HTTP server on port %s'", APP, VERSION, listenAddr)
 	server := NewGoHttpServer(listenAddr, l)
+	server.AddRoute("GET /hello", server.getHandlerStaticPage("Hello", "Hello World!"))
 	server.StartServer()
 }

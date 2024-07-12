@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	DEBUG                           = false
+	DEBUG                           = true
 	assertCorrectStatusCodeExpected = "expected status code should be returned"
 	expectedJsonString              = `{
   "hostname": "pulsar2021",
@@ -249,7 +249,7 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 				t.Fatal(err)
 			}
 			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
-			receivedJson, _ := ioutil.ReadAll(resp.Body)
+			receivedJson, _ := io.ReadAll(resp.Body)
 			rInfo := &RuntimeInfo{}
 			if DEBUG {
 				fmt.Println("param name : % v", nameParameter)
@@ -381,7 +381,7 @@ func TestGoHttpServerHealthHandler(t *testing.T) {
 }
 
 func TestGoHttpServerTimeHandler(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(ioutil.Discard, APP, 0))
+	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(os.Stdout, APP, log.Lshortfile))
 	ts := httptest.NewServer(myServer.getTimeHandler())
 	defer ts.Close()
 	now := time.Now()
@@ -414,7 +414,7 @@ func TestGoHttpServerTimeHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.r.Header.Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
+			tt.r.Header.Set(HeaderContentType, MIMEAppJSON)
 			resp, err := http.DefaultClient.Do(tt.r)
 			if DEBUG {
 				fmt.Printf("### %s : %s on %s\n", tt.name, tt.r.Method, tt.r.URL)
@@ -516,7 +516,7 @@ func TestMainExecution(t *testing.T) {
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "Should return an http status ok")
 
-	receivedJson, err := ioutil.ReadAll(resp.Body)
+	receivedJson, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("Error reading response body: %v\n", err)
 	}
