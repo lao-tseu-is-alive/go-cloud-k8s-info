@@ -1,5 +1,5 @@
 # Start from the latest golang base image
-FROM golang:1.22.5-alpine3.20 as builder
+FROM golang:1.22.5-alpine3.20 AS builder
 
 ENV PATH /usr/local/go/bin:$PATH
 ENV GOLANG_VERSION 1.22.5
@@ -7,6 +7,8 @@ ENV GOLANG_VERSION 1.22.5
 
 # Add Maintainer Info
 LABEL maintainer="cgil"
+LABEL description="This is a go-cloud-k8s-shell container image, a simple Golang microservice with some essential command line tools to make some tests inside a k8s cluster "
+LABEL url="ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:latest"
 
 #RUN addgroup -S gouser && adduser -S gouser -G gouser
 #USER gouser
