@@ -28,9 +28,10 @@ import (
 )
 
 const (
-	VERSION                = "0.4.16"
+	VERSION                = "0.4.17"
 	APP                    = "go-cloud-k8s-info"
 	AppCamelCase           = "goCloudK8sInfo"
+	AppGithubUrl           = "https://github.com/lao-tseu-is-alive/go-cloud-k8s-info"
 	defaultProtocol        = "http"
 	defaultPort            = 8080
 	defaultServerIp        = ""
@@ -892,6 +893,7 @@ func main() {
 	}
 	listenAddr = defaultServerIp + listenAddr
 	l := log.New(os.Stdout, fmt.Sprintf("HTTP_SERVER_%s ", APP), log.Ldate|log.Ltime|log.Lshortfile)
+	l.Printf("INFO: '🚀🚀 App %s version:%s  from %s'", APP, VERSION, AppGithubUrl)
 	l.Printf("INFO: 'Starting %s version:%s HTTP server on port %s'", APP, VERSION, listenAddr)
 	server := NewGoHttpServer(listenAddr, l)
 	// curl -vv  -X POST -H 'Content-Type: application/json'  http://localhost:8080/time   ==>405 Method Not Allowed,
