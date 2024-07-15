@@ -45,6 +45,7 @@ const (
 	htmlHeaderStart        = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css"/>`
 	charsetUTF8            = "charset=UTF-8"
 	MIMEAppJSON            = "application/json"
+	MIMEHtml               = "text/html"
 	MIMEAppJSONCharsetUTF8 = MIMEAppJSON + "; " + charsetUTF8
 	HeaderContentType      = "Content-Type"
 	httpErrMethodNotAllow  = "ERROR: Http method not allowed"
@@ -432,6 +433,25 @@ func GetJsonFromUrl(url string, token string, caCert []byte, logger *log.Logger)
 	}
 	return string(body), nil
 }
+func getKubernetesInfo(l *log.Logger) (string, string, string) {
+	k8sVersion := ""
+	k8sCurrentNameSpace := ""
+	k8sUrl := ""
+
+	k8sUrl, err := GetKubernetesApiUrlFromEnv()
+	if err != nil {
+		l.Printf("💥💥 ERROR: 'GetKubernetesApiUrlFromEnv() returned an error : %+#v'", err)
+	} else {
+		info, errConnInfo := GetKubernetesConnInfo(l)
+		if errConnInfo.err != nil {
+			l.Printf("💥💥 ERROR: 'GetKubernetesConnInfo() returned an error : %s : %+#v'", errConnInfo.msg, errConnInfo.err)
+		}
+		k8sVersion = info.Version
+		k8sCurrentNameSpace = info.CurrentNamespace
+	}
+
+	return k8sUrl, k8sVersion, k8sCurrentNameSpace
+}
 
 func GetKubernetesLatestVersion(logger *log.Logger) (string, error) {
 	k8sUrl := "https://kubernetes.io/"
@@ -504,6 +524,69 @@ func GetKubernetesLatestVersion(logger *log.Logger) (string, error) {
 	return fmt.Sprintf("%2.2f", maxVersion), nil
 }
 
+func handleOsInfoError(errConf ErrorConfig, l *log.Logger) {
+	var pathError *fs.PathError
+	switch {
+	case errors.As(errConf.err, &pathError):
+		l.Printf("NOTICE: 'GetOsInfo() did not find os-release : %v'", errConf.err)
+	default:
+		l.Printf("💥💥 ERROR: 'GetOsInfo() returned an error : %+#v'", errConf.err)
+	}
+}
+
+func collectRuntimeInfo(l *log.Logger) RuntimeInfo {
+	hostName, err := os.Hostname()
+	if err != nil {
+		l.Printf("💥💥 ERROR: 'os.Hostname() returned an error : %v'", err)
+		hostName = "#unknown#"
+	}
+
+	osReleaseInfo, errConf := GetOsInfo()
+	if errConf.err != nil {
+		handleOsInfoError(errConf, l)
+	}
+
+	uptimeOS, err := GetOsUptime()
+	if err != nil {
+		l.Printf("💥💥 ERROR: 'GetOsUptime() returned an error : %+#v'", err)
+	}
+
+	k8sApiUrl, k8sVersion, k8sCurrentNameSpace := getKubernetesInfo(l)
+
+	latestK8sVersion, err := GetKubernetesLatestVersion(l)
+	if err != nil {
+		l.Printf("💥💥 ERROR: 'GetKubernetesLatestVersion() returned an error : %+#v'", err)
+	}
+
+	return RuntimeInfo{
+		Hostname:            hostName,
+		Pid:                 os.Getpid(),
+		PPid:                os.Getppid(),
+		Uid:                 os.Getuid(),
+		Appname:             APP,
+		Version:             VERSION,
+		ParamName:           "_NO_PARAMETER_NAME_",
+		RemoteAddr:          "",
+		RequestId:           "",
+		GOOS:                runtime.GOOS,
+		GOARCH:              runtime.GOARCH,
+		Runtime:             runtime.Version(),
+		NumGoroutine:        strconv.FormatInt(int64(runtime.NumGoroutine()), 10),
+		OsReleaseName:       osReleaseInfo.Name,
+		OsReleaseVersion:    osReleaseInfo.Version,
+		OsReleaseVersionId:  osReleaseInfo.VersionId,
+		NumCPU:              strconv.FormatInt(int64(runtime.NumCPU()), 10),
+		Uptime:              "",
+		UptimeOs:            uptimeOS,
+		K8sApiUrl:           k8sApiUrl,
+		K8sVersion:          k8sVersion,
+		K8sLatestVersion:    latestK8sVersion,
+		K8sCurrentNamespace: k8sCurrentNameSpace,
+		EnvVars:             os.Environ(),
+		Headers:             map[string][]string{},
+	}
+}
+
 func getHtmlHeader(title string, description string) string {
 	return fmt.Sprintf("%s<meta name=\"description\" content=\"%s\"><title>%s</title></head>", htmlHeaderStart, description, title)
 }
@@ -517,6 +600,7 @@ func getHtmlPage(title string, description string) string {
 // in a given amount of time. It returns upon a successful connection;
 // otherwise exits with an error.
 func WaitForHttpServer(listenAddress string, waitDuration time.Duration, numRetries int) {
+	log.Printf("INFO: 'WaitForHttpServer Will wait for server to be up at %s for %v seconds, with %d retries'\n", listenAddress, waitDuration.Seconds(), numRetries)
 	httpClient := http.Client{
 		Timeout: 5 * time.Second,
 	}
@@ -693,94 +777,12 @@ func (s *GoHttpServer) getHealthHandler() http.HandlerFunc {
 	}
 }
 
-func (s *GoHttpServer) handleOsInfoError(errConf ErrorConfig) {
-	var pathError *fs.PathError
-	switch {
-	case errors.As(errConf.err, &pathError):
-		s.logger.Printf("NOTICE: 'GetOsInfo() did not find os-release : %v'", errConf.err)
-	default:
-		s.logger.Printf("💥💥 ERROR: 'GetOsInfo() returned an error : %+#v'", errConf.err)
-	}
-}
-func (s *GoHttpServer) getKubernetesInfo() (string, string, string) {
-	k8sVersion := ""
-	k8sCurrentNameSpace := ""
-	k8sUrl := ""
-
-	k8sUrl, err := GetKubernetesApiUrlFromEnv()
-	if err != nil {
-		s.logger.Printf("💥💥 ERROR: 'GetKubernetesApiUrlFromEnv() returned an error : %+#v'", err)
-	} else {
-		info, errConnInfo := GetKubernetesConnInfo(s.logger)
-		if errConnInfo.err != nil {
-			s.logger.Printf("💥💥 ERROR: 'GetKubernetesConnInfo() returned an error : %s : %+#v'", errConnInfo.msg, errConnInfo.err)
-		}
-		k8sVersion = info.Version
-		k8sCurrentNameSpace = info.CurrentNamespace
-	}
-
-	return k8sUrl, k8sVersion, k8sCurrentNameSpace
-}
-
-func (s *GoHttpServer) collectRuntimeInfo() RuntimeInfo {
-	hostName, err := os.Hostname()
-	if err != nil {
-		s.logger.Printf("💥💥 ERROR: 'os.Hostname() returned an error : %v'", err)
-		hostName = "#unknown#"
-	}
-
-	osReleaseInfo, errConf := GetOsInfo()
-	if errConf.err != nil {
-		s.handleOsInfoError(errConf)
-	}
-
-	uptimeOS, err := GetOsUptime()
-	if err != nil {
-		s.logger.Printf("💥💥 ERROR: 'GetOsUptime() returned an error : %+#v'", err)
-	}
-
-	k8sApiUrl, k8sVersion, k8sCurrentNameSpace := s.getKubernetesInfo()
-
-	latestK8sVersion, err := GetKubernetesLatestVersion(s.logger)
-	if err != nil {
-		s.logger.Printf("💥💥 ERROR: 'GetKubernetesLatestVersion() returned an error : %+#v'", err)
-	}
-
-	return RuntimeInfo{
-		Hostname:            hostName,
-		Pid:                 os.Getpid(),
-		PPid:                os.Getppid(),
-		Uid:                 os.Getuid(),
-		Appname:             APP,
-		Version:             VERSION,
-		ParamName:           "_NO_PARAMETER_NAME_",
-		RemoteAddr:          "",
-		RequestId:           "",
-		GOOS:                runtime.GOOS,
-		GOARCH:              runtime.GOARCH,
-		Runtime:             runtime.Version(),
-		NumGoroutine:        strconv.FormatInt(int64(runtime.NumGoroutine()), 10),
-		OsReleaseName:       osReleaseInfo.Name,
-		OsReleaseVersion:    osReleaseInfo.Version,
-		OsReleaseVersionId:  osReleaseInfo.VersionId,
-		NumCPU:              strconv.FormatInt(int64(runtime.NumCPU()), 10),
-		Uptime:              fmt.Sprintf("%s", time.Since(s.startTime)),
-		UptimeOs:            uptimeOS,
-		K8sApiUrl:           k8sApiUrl,
-		K8sVersion:          k8sVersion,
-		K8sLatestVersion:    latestK8sVersion,
-		K8sCurrentNamespace: k8sCurrentNameSpace,
-		EnvVars:             os.Environ(),
-		Headers:             map[string][]string{},
-	}
-}
-
 func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 	handlerName := "getMyDefaultHandler"
 
 	s.logger.Printf(initCallMsg, handlerName)
 
-	data := s.collectRuntimeInfo()
+	data := collectRuntimeInfo(s.logger)
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		remoteIp := r.RemoteAddr // ip address of the original request or the last proxy
@@ -830,6 +832,7 @@ func (s *GoHttpServer) getHandlerStaticPage(title string, descr string) http.Han
 	s.logger.Printf(initCallMsg, handlerName)
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Printf(formatErrRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
+		w.Header().Set(HeaderContentType, MIMEHtml)
 		w.WriteHeader(http.StatusOK)
 		n, err := fmt.Fprintf(w, getHtmlPage(title, descr))
 		if err != nil {
