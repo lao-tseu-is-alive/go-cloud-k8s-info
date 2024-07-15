@@ -51,10 +51,11 @@ const (
 	httpErrMethodNotAllow  = "ERROR: Http method not allowed"
 	initCallMsg            = "INITIAL CALL TO %s()\n"
 	// defaultUnknown         = "¯\\_( ͡° ͜ʖ ͡°)_/¯"
-	defaultUnknown             = "_UNKNOWN_"
-	defaultNotFoundDescription = "this is a 404 page not found"
-	formatTraceRequest         = "TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n"
-	formatErrRequest           = "ERROR: Http method not allowed [%s] %s  path:'%s', RemoteAddrIP: [%s]\n"
+	defaultUnknown                  = "_UNKNOWN_"
+	defaultNotFoundDescription      = "this is a 404 page not found"
+	fmtErrK8sServiceHostEnvNotFound = "ERROR: KUBERNETES_SERVICE_HOST ENV variable does not exist (not inside K8s ?)."
+	formatTraceRequest              = "TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n"
+	formatErrRequest                = "ERROR: Http method not allowed [%s] %s  path:'%s', RemoteAddrIP: [%s]\n"
 )
 
 var rootPathGetCounter = prometheus.NewCounter(
@@ -290,7 +291,7 @@ func GetKubernetesApiUrlFromEnv() (string, error) {
 	if !exist {
 		return "", &ErrorConfig{
 			err: err,
-			msg: "ERROR: KUBERNETES_SERVICE_HOST ENV variable does not exist (not inside K8s ?).",
+			msg: fmtErrK8sServiceHostEnvNotFound,
 		}
 	}
 	k8sApiUrl = fmt.Sprintf("%s%s", k8sApiUrl, val)
@@ -361,7 +362,7 @@ func GetKubernetesConnInfo(logger *log.Logger) (*K8sInfo, ErrorConfig) {
 		}
 	}
 	urlVersion := fmt.Sprintf("%s/openapi/v2", k8sUrl)
-	res, err := GetJsonFromUrl(urlVersion, info.Token, K8sCaCert, logger)
+	res, err := GetJsonFromUrl(urlVersion, info.Token, K8sCaCert, true, logger)
 	if err != nil {
 
 		logger.Printf("GetKubernetesConnInfo: error in GetJsonFromUrl(url:%s) err:%v", urlVersion, err)
@@ -388,9 +389,9 @@ func GetKubernetesConnInfo(logger *log.Logger) (*K8sInfo, ErrorConfig) {
 	}
 }
 
-func GetJsonFromUrl(url string, token string, caCert []byte, logger *log.Logger) (string, error) {
+func GetJsonFromUrl(url string, bearerToken string, caCert []byte, allowInsecure bool, logger *log.Logger) (string, error) {
 	// Create a Bearer string by appending string access token
-	var bearer = "Bearer " + token
+	var bearer = "Bearer " + bearerToken
 
 	// Create a new request using http
 	req, err := http.NewRequest("GET", url, nil)
@@ -405,7 +406,8 @@ func GetJsonFromUrl(url string, token string, caCert []byte, logger *log.Logger)
 	caCertPool.AppendCertsFromPEM(caCert)
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			RootCAs: caCertPool,
+			RootCAs:            caCertPool,
+			InsecureSkipVerify: allowInsecure,
 		},
 	}
 	// Send req using http Client
@@ -414,17 +416,20 @@ func GetJsonFromUrl(url string, token string, caCert []byte, logger *log.Logger)
 		Timeout:   defaultReadTimeout,
 	}
 	resp, err := client.Do(req)
-
 	if err != nil {
-		logger.Println("Error on response.\n[ERROR] -", err)
+		logger.Println("Error on sending request.\n[ERROR] -", err)
 		return "", err
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-			logger.Println("Error on Body.Close().\n[ERROR] -", err)
+			logger.Println("GetJsonFromUrl got an Error on Body.Close().\n[ERROR] -", err)
 		}
 	}(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		logger.Printf("Error on response StatusCode is not OK Received StatusCode:%d\n", resp.StatusCode)
+		return "", errors.New(fmt.Sprintf("Error on response StatusCode:%d\n", resp.StatusCode))
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -889,6 +894,8 @@ func main() {
 	l := log.New(os.Stdout, fmt.Sprintf("HTTP_SERVER_%s ", APP), log.Ldate|log.Ltime|log.Lshortfile)
 	l.Printf("INFO: 'Starting %s version:%s HTTP server on port %s'", APP, VERSION, listenAddr)
 	server := NewGoHttpServer(listenAddr, l)
+	// curl -vv  -X POST -H 'Content-Type: application/json'  http://localhost:8080/time   ==>405 Method Not Allowed,
+	// curl -vv  -X GET  -H 'Content-Type: application/json'  http://localhost:8080/time	==>200 OK , {"time":"2024-07-15T15:30:21+02:00"}
 	server.AddRoute("GET /hello", server.getHandlerStaticPage("Hello", "Hello World!"))
 	server.StartServer()
 }

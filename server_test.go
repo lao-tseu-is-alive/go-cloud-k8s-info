@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -621,6 +622,168 @@ func TestMainExecution(t *testing.T) {
 			}
 			// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
 			assert.Contains(t, string(receivedJson), tt.wantBody, msgRespNotExpected)
+		})
+	}
+}
+
+func TestGetKubernetesConnInfo(t *testing.T) {
+
+	l := log.New(os.Stdout, APP, log.Lshortfile)
+
+	type args struct {
+		logger *log.Logger
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *K8sInfo
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "should return empty strings and an error when K8S_SERVICE_HOST is not set",
+			args: args{logger: l},
+			want: &K8sInfo{
+				CurrentNamespace: "",
+				Version:          "",
+				Token:            "",
+				CaCert:           "",
+			},
+			wantErr: assert.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, errConf := GetKubernetesConnInfo(tt.args.logger)
+			if !tt.wantErr(t, errConf.err, fmt.Sprintf("GetKubernetesConnInfo() %s", tt.name)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "GetKubernetesConnInfo(%v)", tt.args.logger)
+		})
+	}
+}
+
+func TestGetJsonFromUrl(t *testing.T) {
+
+	l := log.New(os.Stdout, APP, log.Lshortfile)
+	expectedBody := `{"key": "value"}`
+	// Create a mock server
+	mockServer := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer test-token" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(expectedBody))
+	}))
+	defer mockServer.Close()
+
+	// Create a CA cert pool with the server's certificate
+	caCertPool := x509.NewCertPool()
+	caCertPool.AddCert(mockServer.Certificate())
+
+	// Create a mock server that will be closed to simulate a connection error
+	mockServerClosed := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	// Create a CA cert pool with the server's certificate
+	caCertPoolClosed := x509.NewCertPool()
+	caCertPoolClosed.AddCert(mockServerClosed.Certificate())
+	mockServerClosed.Close()
+
+	// Create a mock server ReadError
+	mockServerReadError := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Simulate a partial write followed by a read error
+		w.Header().Set("Content-Length", "1024")
+		w.Write([]byte(expectedBody))
+
+		// Close the connection prematurely to cause a read error
+		conn, _, _ := w.(http.Hijacker).Hijack()
+		conn.Close()
+		// Close the connection immediately to cause a read error
+		//w.(http.Flusher).Flush()
+		//w.(http.CloseNotifier).CloseNotify()
+	}))
+	defer mockServerReadError.Close()
+
+	type args struct {
+		url           string
+		bearerToken   string
+		caCert        []byte
+		allowInsecure bool
+		logger        *log.Logger
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "should return an error when the url is not reachable",
+			args: args{
+				url:           "http://remotehostthatwillnotexist:9999",
+				bearerToken:   "test-token",
+				caCert:        nil,
+				allowInsecure: false,
+				logger:        l,
+			},
+			want:    "",
+			wantErr: assert.Error,
+		},
+		{
+			name: "should return status 200 ok when the url is reachable",
+			args: args{
+				url:           mockServer.URL,
+				bearerToken:   "test-token",
+				caCert:        mockServer.Certificate().Raw,
+				allowInsecure: true,
+				logger:        l,
+			},
+			want:    expectedBody,
+			wantErr: assert.NoError,
+		},
+		{
+			name: "should return an error when the url is reachable but the token is invalid",
+			args: args{
+				url:           mockServer.URL,
+				bearerToken:   "",
+				caCert:        mockServer.Certificate().Raw,
+				allowInsecure: true,
+				logger:        l,
+			},
+			want:    "",
+			wantErr: assert.Error,
+		},
+		{
+			name: "should return an error when the url is reachable but the connection is refused",
+			args: args{
+				url:           mockServerClosed.URL,
+				bearerToken:   "test-token",
+				caCert:        mockServerClosed.Certificate().Raw,
+				allowInsecure: true,
+				logger:        l,
+			},
+			want:    "",
+			wantErr: assert.Error,
+		},
+		{
+			name: "should return an error when the url is reachable but response cannot be read",
+			args: args{
+				url:           mockServerReadError.URL,
+				bearerToken:   "test-token",
+				caCert:        nil,
+				allowInsecure: true,
+				logger:        l,
+			},
+			want:    "",
+			wantErr: assert.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetJsonFromUrl(tt.args.url, tt.args.bearerToken, tt.args.caCert, tt.args.allowInsecure, tt.args.logger)
+			if !tt.wantErr(t, err, fmt.Sprintf("GetJsonFromUrl(%v, %v, %v, %v)", tt.args.url, tt.args.bearerToken, tt.args.caCert, tt.args.logger)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "GetJsonFromUrl(%v, %v, %v, %v)", tt.args.url, tt.args.bearerToken, tt.args.caCert, tt.args.logger)
 		})
 	}
 }
