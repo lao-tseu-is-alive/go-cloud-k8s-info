@@ -23,33 +23,6 @@ const (
 	fmtTraceInfo                    = "### %s : %s on %s\n"
 	fmtErr                          = "### GOT ERROR : %s\n%s"
 	msgRespNotExpected              = "Response should contain what was expected."
-	expectedJsonString              = `{
-  "hostname": "pulsar2021",
-  "pid": 1,
-  "ppid": 0,
-  "uid": 1000,
-  "appname": "go-info-server",
-  "version": "0.3.0",
-  "param_name": "_NO_PARAMETER_NAME_",
-  "remote_addr": "127.0.0.1:56670",
-  "goos": "linux",
-  "goarch": "amd64",
-  "runtime": "go1.18.3",
-  "num_goroutine": "1",
-  "num_cpu": "4",
-  "env_vars": [
-    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-    "HOME=/home/gouser"
-  ],
-  "headers": {
-    "Accept": [
-      "*/*"
-    ],
-    "User-Agent": [
-      "curl/7.68.0"
-    ]
-  }
-}`
 )
 
 type testStruct struct {

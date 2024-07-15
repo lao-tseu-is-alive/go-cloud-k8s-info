@@ -393,6 +393,10 @@ func GetJsonFromUrl(url string, token string, caCert []byte, logger *log.Logger)
 
 	// Create a new request using http
 	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		logger.Printf("Error on http.NewRequest [ERROR: %v]\n", err)
+		return "", err
+	}
 
 	// add authorization header to the req
 	req.Header.Add("Authorization", bearer)
