@@ -19,6 +19,7 @@ import (
 const (
 	DEBUG                           = true
 	assertCorrectStatusCodeExpected = "expected status code should be returned"
+	fmtErrNewRequest                = "### ERROR http.NewRequest %s on [%s] error is :%v\n"
 	expectedJsonString              = `{
   "hostname": "pulsar2021",
   "pid": 1,
@@ -189,7 +190,7 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 	newRequest := func(method, url string, body string) *http.Request {
 		r, err := http.NewRequest(method, ts.URL+url, strings.NewReader(body))
 		if err != nil {
-			t.Fatalf("### ERROR http.NewRequest %s on [%s] error is :%v\n", method, url, err)
+			t.Fatalf(fmtErrNewRequest, method, url, err)
 		}
 		return r
 	}
@@ -272,7 +273,7 @@ func TestGoHttpServerReadinessHandler(t *testing.T) {
 	newRequest := func(method, url string, body string) *http.Request {
 		r, err := http.NewRequest(method, ts.URL+url, strings.NewReader(body))
 		if err != nil {
-			t.Fatalf("### ERROR http.NewRequest %s on [%s] error is :%v\n", method, url, err)
+			t.Fatalf(fmtErrNewRequest, method, url, err)
 		}
 		return r
 	}
@@ -331,7 +332,7 @@ func TestGoHttpServerHealthHandler(t *testing.T) {
 	newRequest := func(method, url string, body string) *http.Request {
 		r, err := http.NewRequest(method, ts.URL+url, strings.NewReader(body))
 		if err != nil {
-			t.Fatalf("### ERROR http.NewRequest %s on [%s] error is :%v\n", method, url, err)
+			t.Fatalf(fmtErrNewRequest, method, url, err)
 		}
 		return r
 	}
@@ -387,7 +388,7 @@ func TestGoHttpServerTimeHandler(t *testing.T) {
 	newRequest := func(method, url string, body string) *http.Request {
 		r, err := http.NewRequest(method, ts.URL+url, strings.NewReader(body))
 		if err != nil {
-			t.Fatalf("### ERROR http.NewRequest %s on [%s] error is :%v\n", method, url, err)
+			t.Fatalf(fmtErrNewRequest, method, url, err)
 		}
 		return r
 	}
@@ -442,7 +443,7 @@ func TestGoHttpServerWaitHandler(t *testing.T) {
 	newRequest := func(method, url string, body string) *http.Request {
 		r, err := http.NewRequest(method, ts.URL+url, strings.NewReader(body))
 		if err != nil {
-			t.Fatalf("### ERROR http.NewRequest %s on [%s] error is :%v\n", method, url, err)
+			t.Fatalf(fmtErrNewRequest, method, url, err)
 		}
 		return r
 	}
