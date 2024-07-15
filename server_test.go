@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -180,7 +179,7 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 	if DEBUG {
 		l = log.New(os.Stdout, fmt.Sprintf("HTTP_SERVER_%s ", APP), log.Ldate|log.Ltime|log.Lshortfile)
 	} else {
-		l = log.New(ioutil.Discard, APP, 0)
+		l = log.New(io.Discard, APP, 0)
 	}
 
 	myServer := NewGoHttpServer(listenAddr, l)
@@ -253,8 +252,7 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 			rInfo := &RuntimeInfo{}
 			if DEBUG {
 				fmt.Println("param name : % v", nameParameter)
-				fmt.Printf("WANTED   :%T - %#v\n", tt.wantBody, tt.wantBody)
-				fmt.Printf("RECEIVED :%T - %#v\n", receivedJson, string(receivedJson))
+				printWantedReceived(tt, receivedJson)
 			}
 			if tt.wantStatusCode == http.StatusOK {
 				err = json.Unmarshal(receivedJson, rInfo)
@@ -267,7 +265,7 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 }
 
 func TestGoHttpServerReadinessHandler(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(ioutil.Discard, APP, 0))
+	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, APP, 0))
 	ts := httptest.NewServer(myServer.getReadinessHandler())
 	defer ts.Close()
 
@@ -309,7 +307,7 @@ func TestGoHttpServerReadinessHandler(t *testing.T) {
 				t.Fatal(err)
 			}
 			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
-			receivedJson, _ := ioutil.ReadAll(resp.Body)
+			receivedJson, _ := io.ReadAll(resp.Body)
 
 			if DEBUG {
 				printWantedReceived(tt, receivedJson)
@@ -326,7 +324,7 @@ func printWantedReceived(tt testStruct, receivedJson []byte) {
 }
 
 func TestGoHttpServerHealthHandler(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(ioutil.Discard, APP, 0))
+	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, APP, 0))
 	ts := httptest.NewServer(myServer.getHealthHandler())
 	defer ts.Close()
 
@@ -368,11 +366,10 @@ func TestGoHttpServerHealthHandler(t *testing.T) {
 				t.Fatal(err)
 			}
 			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
-			receivedJson, _ := ioutil.ReadAll(resp.Body)
+			receivedJson, _ := io.ReadAll(resp.Body)
 
 			if DEBUG {
-				fmt.Printf("WANTED   :%T - %#v\n", tt.wantBody, tt.wantBody)
-				fmt.Printf("RECEIVED :%T - %#v\n", receivedJson, string(receivedJson))
+				printWantedReceived(tt, receivedJson)
 			}
 			// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
 			assert.Contains(t, string(receivedJson), tt.wantBody, "Response should contain what was expected.")
@@ -425,11 +422,10 @@ func TestGoHttpServerTimeHandler(t *testing.T) {
 				t.Fatal(err)
 			}
 			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
-			receivedJson, _ := ioutil.ReadAll(resp.Body)
+			receivedJson, _ := io.ReadAll(resp.Body)
 
 			if DEBUG {
-				fmt.Printf("WANTED   :%T - %#v\n", tt.wantBody, tt.wantBody)
-				fmt.Printf("RECEIVED :%T - %#v\n", receivedJson, string(receivedJson))
+				printWantedReceived(tt, receivedJson)
 			}
 			// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
 			assert.Contains(t, string(receivedJson), tt.wantBody, "Response should contain what was expected.")
@@ -438,7 +434,7 @@ func TestGoHttpServerTimeHandler(t *testing.T) {
 }
 
 func TestGoHttpServerWaitHandler(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(ioutil.Discard, APP, 0))
+	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, APP, 0))
 	ts := httptest.NewServer(myServer.getWaitHandler(1))
 	defer ts.Close()
 	expectedResult := fmt.Sprintf("{\"waited\":\"%v seconds\"}", 1)
@@ -484,8 +480,7 @@ func TestGoHttpServerWaitHandler(t *testing.T) {
 			receivedJson, _ := io.ReadAll(resp.Body)
 
 			if DEBUG {
-				fmt.Printf("WANTED   :%T - %#v\n", tt.wantBody, tt.wantBody)
-				fmt.Printf("RECEIVED :%T - %#v\n", receivedJson, string(receivedJson))
+				printWantedReceived(tt, receivedJson)
 			}
 			// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
 			assert.Contains(t, string(receivedJson), tt.wantBody, "Response should contain what was expected.")
