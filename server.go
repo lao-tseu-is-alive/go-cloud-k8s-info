@@ -896,7 +896,7 @@ func main() {
 	l.Printf("INFO: '🚀🚀 App %s version:%s  from %s'", APP, VERSION, AppGithubUrl)
 	l.Printf("INFO: 'Starting %s version:%s HTTP server on port %s'", APP, VERSION, listenAddr)
 	server := NewGoHttpServer(listenAddr, l)
-	// curl -vv  -X POST -H 'Content-Type: application/json'  http://localhost:8080/time   ==>405 Method Not Allowed,
+	// curl -vv  -X POST -H 'Content-Type: application/json'  http://localhost:8080/time   ==> 405 Method Not Allowed,
 	// curl -vv  -X GET  -H 'Content-Type: application/json'  http://localhost:8080/time	==>200 OK , {"time":"2024-07-15T15:30:21+02:00"}
 	server.AddRoute("GET /hello", server.getHandlerStaticPage("Hello", "Hello World!"))
 	server.StartServer()
