@@ -173,9 +173,13 @@ spec:
         app: go-cloud-k8s-info
     spec:                        # Spec for the Pod base config, securityContext can be overridden in container
       # kubectl label nodes gok8sw01.lausanne.ch kubernetes.io/role=worker
-      # comment the two next lines if you do not have worker nodes (rancher-desktop)
-      nodeSelector:
-        node-type: worker
+      # uncomment the two next lines if you want to deploy on worker nodes only
+      #nodeSelector:
+      #  node-type: worker
+
+      # next line allow to choose if you want to opt in/out of automounting API credentials
+      # on /var/run/secrets/kubernetes.io/serviceaccount/token
+      # https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
       automountServiceAccountToken: false
       securityContext:           # https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
         seccompProfile:
@@ -188,7 +192,7 @@ spec:
           - 100
       containers:
       - name: go-cloud-k8s-info
-        image: ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:v0.4.15
+        image: ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:v0.4.18
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false
