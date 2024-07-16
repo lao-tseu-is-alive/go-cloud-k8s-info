@@ -7,11 +7,11 @@ ENV GOLANG_VERSION 1.22.5
 
 # Add Maintainer Info
 LABEL maintainer="cgil"
-LABEL description="This is a go-cloud-k8s-shell container image, a simple Golang microservice with some essential command line tools to make some tests inside a k8s cluster "
-LABEL url="ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:latest"
-
-#RUN addgroup -S gouser && adduser -S gouser -G gouser
-#USER gouser
+LABEL org.opencontainers.image.title="go-cloud-k8s-shell"
+LABEL org.opencontainers.image.description="This is a go-cloud-k8s-info container image, a simple microservice written in Golang that gives some runtime information"
+LABEL org.opencontainers.image.url="https://ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:latest"
+LABEL org.opencontainers.image.authors="cgil"
+LABEL org.opencontainers.image.licenses="MIT"
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
@@ -49,6 +49,10 @@ COPY --from=builder /app/go-info-server .
 
 # Expose port 8080 to the outside world, go-info-server will use the env PORT as listening port or 8080 as default
 EXPOSE 8080
+
+# Health check to ensure the app is running
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
 
 # Command to run the executable
 CMD ["./go-info-server"]
