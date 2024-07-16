@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	VERSION                = "0.4.17"
+	VERSION                = "0.4.18"
 	APP                    = "go-cloud-k8s-info"
 	AppCamelCase           = "goCloudK8sInfo"
 	AppGithubUrl           = "https://github.com/lao-tseu-is-alive/go-cloud-k8s-info"
@@ -780,7 +780,6 @@ func (s *GoHttpServer) getHealthHandler() http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 	}
 }
-
 func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 	handlerName := "getMyDefaultHandler"
 
@@ -819,7 +818,6 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 
 	}
 }
-
 func (s *GoHttpServer) getHandlerNotFound() http.HandlerFunc {
 	handlerName := "getHandlerNotFound"
 	s.logger.Printf(initCallMsg, handlerName)
@@ -845,7 +843,6 @@ func (s *GoHttpServer) getHandlerNotFound() http.HandlerFunc {
 		}
 	}
 }
-
 func (s *GoHttpServer) getHandlerStaticPage(title string, descr string) http.HandlerFunc {
 	handlerName := fmt.Sprintf("getHandlerStaticPage[%s]", title)
 	s.logger.Printf(initCallMsg, handlerName)
@@ -860,7 +857,6 @@ func (s *GoHttpServer) getHandlerStaticPage(title string, descr string) http.Han
 		}
 	}
 }
-
 func (s *GoHttpServer) getTimeHandler() http.HandlerFunc {
 	handlerName := "getTimeHandler"
 	s.logger.Printf(initCallMsg, handlerName)

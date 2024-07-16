@@ -36,6 +36,13 @@ type testStruct struct {
 	r              *http.Request
 }
 
+func printWantedReceived(wantBody string, receivedJson []byte) {
+	if DEBUG {
+		fmt.Printf("WANTED   :%T - %#v\n", wantBody, wantBody)
+		fmt.Printf("RECEIVED :%T - %#v\n", receivedJson, string(receivedJson))
+	}
+}
+
 func TestErrorConfigError(t *testing.T) {
 	err := ErrorConfig{
 		err: errors.New("a brand new error test"),
@@ -213,6 +220,48 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 	}
 }
 
+func TestGoHttpServerHandlerNotFound(t *testing.T) {
+	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, APP, 0))
+	ts := httptest.NewServer(myServer.getHandlerNotFound())
+	defer ts.Close()
+
+	newRequest := func(method, url string, body string) *http.Request {
+		r, err := http.NewRequest(method, ts.URL+url, strings.NewReader(body))
+		if err != nil {
+			t.Fatalf(fmtErrNewRequest, method, url, err)
+		}
+		return r
+	}
+
+	tests := []testStruct{
+		{
+			name:           "ARouteThatDoesNotExist GET should return Http Status 404 Not Found",
+			wantStatusCode: http.StatusNotFound,
+			wantBody:       "",
+			paramKeyValues: make(map[string]string),
+			r:              newRequest(http.MethodGet, "/ARouteThatDoesNotExist", ""),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.r.Header.Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
+			resp, err := http.DefaultClient.Do(tt.r)
+			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
+			defer CloseBody(resp.Body, tt.name, l)
+			if err != nil {
+				fmt.Printf(fmtErr, err, resp.Body)
+				t.Fatal(err)
+			}
+			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
+			receivedJson, _ := io.ReadAll(resp.Body)
+			printWantedReceived(tt.wantBody, receivedJson)
+			// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
+			assert.Contains(t, string(receivedJson), tt.wantBody, msgRespNotExpected)
+		})
+	}
+}
+
 func TestGoHttpServerReadinessHandler(t *testing.T) {
 	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, APP, 0))
 	ts := httptest.NewServer(myServer.getReadinessHandler())
@@ -252,13 +301,6 @@ func TestGoHttpServerReadinessHandler(t *testing.T) {
 			// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
 			assert.Contains(t, string(receivedJson), tt.wantBody, msgRespNotExpected)
 		})
-	}
-}
-
-func printWantedReceived(wantBody string, receivedJson []byte) {
-	if DEBUG {
-		fmt.Printf("WANTED   :%T - %#v\n", wantBody, wantBody)
-		fmt.Printf("RECEIVED :%T - %#v\n", receivedJson, string(receivedJson))
 	}
 }
 
@@ -752,47 +794,5 @@ func init() {
 		l = log.New(os.Stdout, fmt.Sprintf("testing_%s ", APP), log.Ldate|log.Ltime|log.Lshortfile)
 	} else {
 		l = log.New(io.Discard, APP, 0)
-	}
-}
-
-func TestGoHttpServer_getHandlerNotFound(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, APP, 0))
-	ts := httptest.NewServer(myServer.getHandlerNotFound())
-	defer ts.Close()
-
-	newRequest := func(method, url string, body string) *http.Request {
-		r, err := http.NewRequest(method, ts.URL+url, strings.NewReader(body))
-		if err != nil {
-			t.Fatalf(fmtErrNewRequest, method, url, err)
-		}
-		return r
-	}
-
-	tests := []testStruct{
-		{
-			name:           "ARouteThatDoesNotExist GET should return Http Status 404 Not Found",
-			wantStatusCode: http.StatusNotFound,
-			wantBody:       "",
-			paramKeyValues: make(map[string]string),
-			r:              newRequest(http.MethodGet, "/ARouteThatDoesNotExist", ""),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.r.Header.Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
-			resp, err := http.DefaultClient.Do(tt.r)
-			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer CloseBody(resp.Body, tt.name, l)
-			if err != nil {
-				fmt.Printf(fmtErr, err, resp.Body)
-				t.Fatal(err)
-			}
-			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
-			receivedJson, _ := io.ReadAll(resp.Body)
-			printWantedReceived(tt.wantBody, receivedJson)
-			// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
-			assert.Contains(t, string(receivedJson), tt.wantBody, msgRespNotExpected)
-		})
 	}
 }
