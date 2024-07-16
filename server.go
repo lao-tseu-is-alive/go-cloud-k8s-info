@@ -42,7 +42,6 @@ const (
 	defaultWriteTimeout    = 10 * time.Second // max time to write response to the client
 	defaultIdleTimeout     = 2 * time.Minute  // max time for connections using TCP Keep-Alive
 	caCertPath             = "certificates/isrg-root-x1-cross-signed.pem"
-	defaultNotFound        = "🤔 ℍ𝕞𝕞... 𝕤𝕠𝕣𝕣𝕪 :【𝟜𝟘𝟜 : ℙ𝕒𝕘𝕖 ℕ𝕠𝕥 𝔽𝕠𝕦𝕟𝕕】🕳️ 🔥"
 	htmlHeaderStart        = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css"/>`
 	charsetUTF8            = "charset=UTF-8"
 	MIMEAppJSON            = "application/json"
@@ -51,9 +50,10 @@ const (
 	HeaderContentType      = "Content-Type"
 	httpErrMethodNotAllow  = "ERROR: Http method not allowed"
 	initCallMsg            = "INITIAL CALL TO %s()\n"
+	defaultUnknown         = "_UNKNOWN_"
 	// defaultUnknown         = "¯\\_( ͡° ͜ʖ ͡°)_/¯"
-	defaultUnknown                  = "_UNKNOWN_"
-	defaultNotFoundDescription      = "this is a 404 page not found"
+	defaultNotFound                 = "404 page not found"
+	defaultNotFoundDescription      = "🤔 ℍ𝕞𝕞... 𝕤𝕠𝕣𝕣𝕪 :【𝟜𝟘𝟜 : ℙ𝕒𝕘𝕖 ℕ𝕠𝕥 𝔽𝕠𝕦𝕟𝕕】🕳️ 🔥"
 	fmtErrK8sServiceHostEnvNotFound = "ERROR: KUBERNETES_SERVICE_HOST ENV variable does not exist (not inside K8s ?)."
 	formatTraceRequest              = "TRACE: [%s] %s  path:'%s', RemoteAddrIP: [%s]\n"
 	formatErrRequest                = "ERROR: Http method not allowed [%s] %s  path:'%s', RemoteAddrIP: [%s]\n"
@@ -199,6 +199,13 @@ type K8sInfo struct {
 	Version          string `json:"version"`
 	Token            string `json:"token"`
 	CaCert           string `json:"ca_cert"`
+}
+
+func CloseBody(Body io.ReadCloser, msg string, logger *log.Logger) {
+	err := Body.Close()
+	if err != nil {
+		logger.Printf("Error %v in %s doing Body.Close().\n", err, msg)
+	}
 }
 
 func GetOsUptime() (string, error) {
@@ -421,12 +428,7 @@ func GetJsonFromUrl(url string, bearerToken string, caCert []byte, allowInsecure
 		logger.Println("Error on sending request.\n[ERROR] -", err)
 		return "", err
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			logger.Println("GetJsonFromUrl got an Error on Body.Close().\n[ERROR] -", err)
-		}
-	}(resp.Body)
+	defer CloseBody(resp.Body, "GetJsonFromUrl", logger)
 	if resp.StatusCode != http.StatusOK {
 		logger.Printf("Error on response StatusCode is not OK Received StatusCode:%d\n", resp.StatusCode)
 		return "", errors.New(fmt.Sprintf("Error on response StatusCode:%d\n", resp.StatusCode))
@@ -497,12 +499,7 @@ func GetKubernetesLatestVersion(logger *log.Logger) (string, error) {
 		logger.Println("Error on response.\n[ERROR] -", err)
 		return fmt.Sprintf("GetKubernetesLatestVersion was unable to get content from %s, Error: %v", k8sUrl, err), err
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			logger.Println("Error on Body.Close().\n[ERROR] -", err)
-		}
-	}(resp.Body)
+	defer CloseBody(resp.Body, "GetKubernetesLatestVersion", logger)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -715,7 +712,7 @@ func (s *GoHttpServer) routes() {
 			promhttp.HandlerOpts{}),
 		))
 
-	// s.router.Handle("/hello", s.getHelloHandler())
+	s.router.Handle("GET /...", s.getHandlerNotFound())
 }
 
 // AddRoute   adds a handler for this web server
@@ -741,18 +738,18 @@ func (s *GoHttpServer) StartServer() {
 
 }
 
-func (s *GoHttpServer) jsonResponse(w http.ResponseWriter, result interface{}) {
+func (s *GoHttpServer) jsonResponse(w http.ResponseWriter, result interface{}) error {
 	body, err := json.Marshal(result)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		s.logger.Printf("ERROR: 'JSON marshal failed. Error: %v'", err)
-		return
+		return err
 	}
 	var prettyOutput bytes.Buffer
 	err = json.Indent(&prettyOutput, body, "", "  ")
 	if err != nil {
 		s.logger.Printf("ERROR: 'JSON Indent failed. Error: %v'", err)
-		return
+		return err
 	}
 	w.Header().Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -760,8 +757,9 @@ func (s *GoHttpServer) jsonResponse(w http.ResponseWriter, result interface{}) {
 	_, err = w.Write(prettyOutput.Bytes())
 	if err != nil {
 		s.logger.Printf("ERROR: 'w.Write failed. Error: %v'", err)
-		return
+		return err
 	}
+	return nil
 }
 
 //############# BEGIN HANDLERS
@@ -812,7 +810,11 @@ func (s *GoHttpServer) getMyDefaultHandler() http.HandlerFunc {
 		data.UptimeOs = uptimeOS
 		data.RequestId = guid.String()
 		rootPathGetCounter.Inc()
-		s.jsonResponse(w, data)
+		err = s.jsonResponse(w, data)
+		if err != nil {
+			s.logger.Printf("ERROR:  %v doing jsonResponse [%s] path:'%s', from IP: [%s]\n", err, handlerName, requestedUrlPath, remoteIp)
+			return
+		}
 		s.logger.Printf("SUCCESS: [%s] path:'%s', from IP: [%s]\n", handlerName, requestedUrlPath, remoteIp)
 
 	}
@@ -823,11 +825,22 @@ func (s *GoHttpServer) getHandlerNotFound() http.HandlerFunc {
 	s.logger.Printf(initCallMsg, handlerName)
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Printf(formatErrRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
+		w.Header().Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 		w.WriteHeader(http.StatusNotFound)
 		rootPathNotFoundCounter.Inc()
-		n, err := fmt.Fprintf(w, getHtmlPage(defaultNotFound, defaultNotFoundDescription))
+		type NotFound struct {
+			Status  int    `json:"status"`
+			Error   string `json:"error"`
+			Message string `json:"message"`
+		}
+		data := &NotFound{
+			Status:  http.StatusNotFound,
+			Error:   defaultNotFound,
+			Message: defaultNotFoundDescription,
+		}
+		err := json.NewEncoder(w).Encode(data)
 		if err != nil {
-			s.logger.Printf("💥💥 ERROR: [%s] Not Found was unable to Fprintf. path:'%s', from IP: [%s], send_bytes:%d\n", handlerName, r.URL.Path, r.RemoteAddr, n)
+			s.logger.Printf("💥💥 ERROR: [%s] Not Found was unable to Fprintf. path:'%s', from IP: [%s]\n", handlerName, r.URL.Path, r.RemoteAddr)
 			http.Error(w, "Internal server error. myDefaultHandler was unable to Fprintf", http.StatusInternalServerError)
 		}
 	}
