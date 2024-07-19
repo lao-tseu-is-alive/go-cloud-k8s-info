@@ -36,3 +36,4 @@ go_admin_credentials_secrets
 /tmp/goaccess-1687438712532.json
 /tmp/goaccess-1687439163482.json
 /server
+/secret/
