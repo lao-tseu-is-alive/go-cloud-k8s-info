@@ -3,8 +3,11 @@ package main
 import (
 	"crypto/x509"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"github.com/lao-tseu-is-alive/go-cloud-k8s-info/pkg/config"
+	"github.com/lao-tseu-is-alive/go-cloud-k8s-info/pkg/httpclient"
+	"github.com/lao-tseu-is-alive/go-cloud-k8s-info/pkg/info"
+	"github.com/lao-tseu-is-alive/go-cloud-k8s-info/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"log"
@@ -40,32 +43,6 @@ func printWantedReceived(wantBody string, receivedJson []byte) {
 	if DEBUG {
 		fmt.Printf("WANTED   :%T - %#v\n", wantBody, wantBody)
 		fmt.Printf("RECEIVED :%T - %#v\n", receivedJson, string(receivedJson))
-	}
-}
-
-func TestErrorConfigError(t *testing.T) {
-	err := ErrorConfig{
-		err: errors.New("a brand new error test"),
-		msg: "ERROR: This a test error.",
-	}
-	tests := []struct {
-		name string
-		e    ErrorConfig
-		want string
-	}{
-		{
-			name: "",
-			e:    err,
-			want: fmt.Sprintf("%s : %v", err.msg, err.err),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := err
-			if got := e.Error(); got != tt.want {
-				t.Errorf("Error() = %v, want %v", got, tt.want)
-			}
-		})
 	}
 }
 
@@ -141,7 +118,7 @@ func TestGetPortFromEnv(t *testing.T) {
 					return
 				}
 			}
-			got, err := GetPortFromEnv(tt.args.defaultPort)
+			got, err := config.GetPortFromEnv(tt.args.defaultPort)
 			if !tt.wantErr(t, err, fmt.Sprintf("GetPortFromEnv() error = %v, wantErr %v", err, tt.wantErrPrefix)) {
 				return
 			}
@@ -187,7 +164,7 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.r.Header.Set("Content-Type", "application/json")
+			tt.r.Header.Set("Content-Type", "Application/json")
 			if len(tt.paramKeyValues) > 0 {
 				parameters := tt.r.URL.Query()
 				for paramName, paramValue := range tt.paramKeyValues {
@@ -200,14 +177,14 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 			}
 			resp, err := http.DefaultClient.Do(tt.r)
 			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer CloseBody(resp.Body, tt.name, l)
+			defer httpclient.CloseBody(resp.Body, tt.name, l)
 			if err != nil {
 				fmt.Printf(fmtErr, err, resp.Body)
 				t.Fatal(err)
 			}
 			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
 			receivedJson, _ := io.ReadAll(resp.Body)
-			rInfo := &RuntimeInfo{}
+			rInfo := &info.RuntimeInfo{}
 			l.Println("param name : % v", nameParameter)
 			printWantedReceived(tt.wantBody, receivedJson)
 			if tt.wantStatusCode == http.StatusOK {
@@ -221,7 +198,7 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 }
 
 func TestGoHttpServerHandlerNotFound(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, APP, 0))
+	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, version.APP, 0))
 	ts := httptest.NewServer(myServer.getHandlerNotFound())
 	defer ts.Close()
 
@@ -248,7 +225,7 @@ func TestGoHttpServerHandlerNotFound(t *testing.T) {
 			tt.r.Header.Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 			resp, err := http.DefaultClient.Do(tt.r)
 			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer CloseBody(resp.Body, tt.name, l)
+			defer httpclient.CloseBody(resp.Body, tt.name, l)
 			if err != nil {
 				fmt.Printf(fmtErr, err, resp.Body)
 				t.Fatal(err)
@@ -263,7 +240,7 @@ func TestGoHttpServerHandlerNotFound(t *testing.T) {
 }
 
 func TestGoHttpServerReadinessHandler(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, APP, 0))
+	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, version.APP, 0))
 	ts := httptest.NewServer(myServer.getReadinessHandler())
 	defer ts.Close()
 
@@ -290,7 +267,7 @@ func TestGoHttpServerReadinessHandler(t *testing.T) {
 			tt.r.Header.Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 			resp, err := http.DefaultClient.Do(tt.r)
 			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer CloseBody(resp.Body, tt.name, l)
+			defer httpclient.CloseBody(resp.Body, tt.name, l)
 			if err != nil {
 				fmt.Printf(fmtErr, err, resp.Body)
 				t.Fatal(err)
@@ -305,7 +282,7 @@ func TestGoHttpServerReadinessHandler(t *testing.T) {
 }
 
 func TestGoHttpServerHealthHandler(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, APP, 0))
+	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, version.APP, 0))
 	ts := httptest.NewServer(myServer.getHealthHandler())
 	defer ts.Close()
 
@@ -332,7 +309,7 @@ func TestGoHttpServerHealthHandler(t *testing.T) {
 			tt.r.Header.Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 			resp, err := http.DefaultClient.Do(tt.r)
 			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer CloseBody(resp.Body, tt.name, l)
+			defer httpclient.CloseBody(resp.Body, tt.name, l)
 			if err != nil {
 				fmt.Printf(fmtErr, err, resp.Body)
 				t.Fatal(err)
@@ -348,7 +325,7 @@ func TestGoHttpServerHealthHandler(t *testing.T) {
 }
 
 func TestGoHttpServerTimeHandler(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(os.Stdout, APP, log.Lshortfile))
+	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(os.Stdout, version.APP, log.Lshortfile))
 	ts := httptest.NewServer(myServer.getTimeHandler())
 	defer ts.Close()
 	now := time.Now()
@@ -377,7 +354,7 @@ func TestGoHttpServerTimeHandler(t *testing.T) {
 			tt.r.Header.Set(HeaderContentType, MIMEAppJSON)
 			resp, err := http.DefaultClient.Do(tt.r)
 			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer CloseBody(resp.Body, tt.name, l)
+			defer httpclient.CloseBody(resp.Body, tt.name, l)
 			if err != nil {
 				fmt.Printf(fmtErr, err, resp.Body)
 				t.Fatal(err)
@@ -393,7 +370,7 @@ func TestGoHttpServerTimeHandler(t *testing.T) {
 }
 
 func TestGoHttpServerWaitHandler(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, APP, 0))
+	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, version.APP, 0))
 	ts := httptest.NewServer(myServer.getWaitHandler(1))
 	defer ts.Close()
 	expectedResult := fmt.Sprintf("{\"waited\":\"%v seconds\"}", 1)
@@ -428,7 +405,7 @@ func TestGoHttpServerWaitHandler(t *testing.T) {
 			tt.r.Header.Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 			resp, err := http.DefaultClient.Do(tt.r)
 			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer CloseBody(resp.Body, tt.name, l)
+			defer httpclient.CloseBody(resp.Body, tt.name, l)
 			if err != nil {
 				fmt.Printf(fmtErr, err, resp.Body)
 				t.Fatal(err)
@@ -468,7 +445,7 @@ func TestMainExecution(t *testing.T) {
 			t.Fatalf(fmtErrNewRequest, method, url, err)
 		}
 		if method == http.MethodPost && useFormUrlencodedContentType {
-			r.Header.Set(HeaderContentType, "application/x-www-form-urlencoded")
+			r.Header.Set(HeaderContentType, "Application/x-www-form-urlencoded")
 		} else {
 			r.Header.Set(HeaderContentType, MIMEAppJSON)
 		}
@@ -489,10 +466,10 @@ func TestMainExecution(t *testing.T) {
 
 	tests := []testStruct{
 		{
-			name:                         "Get on default get handler should contain the appname field",
+			name:                         "Get on default get handler should contain the Appname field",
 			wantStatusCode:               http.StatusOK,
 			contentType:                  MIMEAppJSON,
-			wantBody:                     fmt.Sprintf("\"appname\": \"%s\"", APP),
+			wantBody:                     fmt.Sprintf("\"appname\": \"%s\"", version.APP),
 			paramKeyValues:               make(map[string]string),
 			httpMethod:                   http.MethodGet,
 			url:                          "/",
@@ -595,10 +572,10 @@ func TestMainExecution(t *testing.T) {
 				fmt.Printf(fmtErr, err, resp.Body)
 				t.Fatal(err)
 			}
-			defer CloseBody(resp.Body, tt.name, l)
+			defer httpclient.CloseBody(resp.Body, tt.name, l)
 			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
 			receivedJson, _ := io.ReadAll(resp.Body)
-			rInfo := &RuntimeInfo{}
+			rInfo := &info.RuntimeInfo{}
 			printWantedReceived(tt.wantBody, receivedJson)
 			if tt.wantStatusCode == http.StatusOK {
 				if tt.contentType == MIMEAppJSON {
@@ -614,7 +591,7 @@ func TestMainExecution(t *testing.T) {
 
 func TestGetKubernetesConnInfo(t *testing.T) {
 
-	l := log.New(os.Stdout, APP, log.Lshortfile)
+	l := log.New(os.Stdout, version.APP, log.Lshortfile)
 
 	type args struct {
 		logger *log.Logger
@@ -622,13 +599,13 @@ func TestGetKubernetesConnInfo(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *K8sInfo
+		want    *info.K8sInfo
 		wantErr assert.ErrorAssertionFunc
 	}{
 		{
 			name: "should return empty strings and an error when K8S_SERVICE_HOST is not set",
 			args: args{logger: l},
-			want: &K8sInfo{
+			want: &info.K8sInfo{
 				CurrentNamespace: "",
 				Version:          "",
 				Token:            "",
@@ -639,8 +616,8 @@ func TestGetKubernetesConnInfo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, errConf := GetKubernetesConnInfo(tt.args.logger)
-			if !tt.wantErr(t, errConf.err, fmt.Sprintf("GetKubernetesConnInfo() %s", tt.name)) {
+			got, err := info.GetKubernetesConnInfo(tt.args.logger)
+			if !tt.wantErr(t, err, fmt.Sprintf("GetKubernetesConnInfo() %s", tt.name)) {
 				return
 			}
 			assert.Equalf(t, tt.want, got, "GetKubernetesConnInfo(%v)", tt.args.logger)
@@ -650,7 +627,7 @@ func TestGetKubernetesConnInfo(t *testing.T) {
 
 func TestGetJsonFromUrl(t *testing.T) {
 
-	l := log.New(os.Stdout, APP, log.Lshortfile)
+	l := log.New(os.Stdout, version.APP, log.Lshortfile)
 	const authToken = "test-token"
 	expectedBody := `{"key": "value"}`
 	// Create a mock server
@@ -780,7 +757,7 @@ func TestGetJsonFromUrl(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetJsonFromUrl(tt.args.url, tt.args.bearerToken, tt.args.caCert, tt.args.allowInsecure, tt.args.logger)
+			got, err := info.GetJsonFromUrl(tt.args.url, tt.args.bearerToken, tt.args.caCert, tt.args.allowInsecure, defaultReadTimeout, tt.args.logger)
 			if !tt.wantErr(t, err, fmt.Sprintf("GetJsonFromUrl(%v, %v, %v, %v)", tt.args.url, tt.args.bearerToken, tt.args.caCert, tt.args.logger)) {
 				return
 			}
@@ -791,8 +768,8 @@ func TestGetJsonFromUrl(t *testing.T) {
 
 func init() {
 	if DEBUG {
-		l = log.New(os.Stdout, fmt.Sprintf("testing_%s ", APP), log.Ldate|log.Ltime|log.Lshortfile)
+		l = log.New(os.Stdout, fmt.Sprintf("testing_%s ", version.APP), log.Ldate|log.Ltime|log.Lshortfile)
 	} else {
-		l = log.New(io.Discard, APP, 0)
+		l = log.New(io.Discard, version.APP, 0)
 	}
 }
