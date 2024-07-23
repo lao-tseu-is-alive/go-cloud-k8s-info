@@ -23,10 +23,12 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # Copy the source from the current directory to the Working Directory inside the container
-COPY *.go ./
+COPY cmd/server ./server
+COPY pkg ./pkg
+
 
 # Build the Go app
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o go-info-server .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o go-info-server ./server
 
 
 ######## Start a new stage  #######
