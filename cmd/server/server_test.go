@@ -4,9 +4,9 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"github.com/lao-tseu-is-alive/go-cloud-k8s-info/pkg/config"
 	"github.com/lao-tseu-is-alive/go-cloud-k8s-info/pkg/go_http"
 	"github.com/lao-tseu-is-alive/go-cloud-k8s-info/pkg/info"
+	"github.com/lao-tseu-is-alive/go-cloud-k8s-info/pkg/tools"
 	"github.com/lao-tseu-is-alive/go-cloud-k8s-info/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -31,14 +31,6 @@ const (
 
 var l *log.Logger
 
-type testStruct struct {
-	name           string
-	wantStatusCode int
-	wantBody       string
-	paramKeyValues map[string]string
-	r              *http.Request
-}
-
 type TestMainStruct struct {
 	name                         string
 	contentType                  string
@@ -49,97 +41,6 @@ type TestMainStruct struct {
 	url                          string
 	useFormUrlencodedContentType bool
 	body                         string
-}
-
-func printWantedReceived(wantBody string, receivedJson []byte) {
-	if DEBUG {
-		fmt.Printf("WANTED   :%T - %#v\n", wantBody, wantBody)
-		fmt.Printf("RECEIVED :%T - %#v\n", receivedJson, string(receivedJson))
-	}
-}
-
-func TestGetPortFromEnv(t *testing.T) {
-	type args struct {
-		defaultPort int
-	}
-	tests := []struct {
-		name          string
-		args          args
-		envPORT       string
-		want          string
-		wantErr       assert.ErrorAssertionFunc
-		wantErrPrefix string
-	}{
-		{
-			name: "should return the default values when env variables are not set",
-			args: args{
-				defaultPort: defaultPort,
-			},
-			envPORT:       "",
-			want:          ":8080",
-			wantErr:       assert.NoError,
-			wantErrPrefix: "",
-		},
-		{
-			name: "should return SERVERIP:PORT when env variables are set to valid values",
-			args: args{
-				defaultPort: 8080,
-			},
-			envPORT:       "3333",
-			want:          ":3333",
-			wantErr:       assert.NoError,
-			wantErrPrefix: "",
-		},
-		{
-			name: "should return an empty string and report an error when PORT is not a number",
-			args: args{
-				defaultPort: 8080,
-			},
-			envPORT:       "aBigOne",
-			want:          "",
-			wantErr:       assert.Error,
-			wantErrPrefix: "ERROR: CONFIG ENV PORT should contain a valid integer.",
-		},
-		{
-			name: "should return an empty string and report an error when PORT is < 1",
-			args: args{
-				defaultPort: 8080,
-			},
-			envPORT:       "0",
-			want:          "",
-			wantErr:       assert.Error,
-			wantErrPrefix: "ERROR: CONFIG ENV PORT should contain an integer between 1 and 65535",
-		},
-		{
-			name: "should return an empty string and report an error when PORT is > 65535",
-			args: args{
-				defaultPort: 8080,
-			},
-			envPORT:       "70000",
-			want:          "",
-			wantErr:       assert.Error,
-			wantErrPrefix: "ERROR: CONFIG ENV PORT should contain an integer between 1 and 65535",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if len(tt.envPORT) > 0 {
-				err := os.Setenv("PORT", tt.envPORT)
-				if err != nil {
-					t.Errorf("Unable to set env variable PORT")
-					return
-				}
-			}
-			got, err := config.GetPortFromEnv(tt.args.defaultPort)
-			if !tt.wantErr(t, err, fmt.Sprintf("GetPortFromEnv() error = %v, wantErr %v", err, tt.wantErrPrefix)) {
-				return
-			}
-
-			if got != tt.want {
-				t.Errorf("GetPortFromEnv() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
 }
 
 func TestGoHttpServerMyDefaultHandler(t *testing.T) {
@@ -156,7 +57,13 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 		}
 		return r
 	}
-
+	type testStruct struct {
+		name           string
+		wantStatusCode int
+		wantBody       string
+		paramKeyValues map[string]string
+		r              *http.Request
+	}
 	tests := []testStruct{
 		{
 			name:           "1: Get on default Server Path should return a valid json containing param value",
@@ -198,221 +105,13 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 			receivedJson, _ := io.ReadAll(resp.Body)
 			rInfo := &info.RuntimeInfo{}
 			l.Println("param name : % v", nameParameter)
-			printWantedReceived(tt.wantBody, receivedJson)
+			tools.PrintWantedReceived(tt.wantBody, receivedJson, l)
 			if tt.wantStatusCode == http.StatusOK {
 				err = json.Unmarshal(receivedJson, rInfo)
 				assert.Nil(t, err, "the output should be a valid json")
 			}
 			// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
 			assert.Contains(t, string(receivedJson), tt.wantBody, msgRespNotExpected)
-		})
-	}
-}
-
-func TestGoHttpServerHandlerNotFound(t *testing.T) {
-	myServer := go_http.NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, version.APP, 0))
-	ts := httptest.NewServer(myServer.GetHandlerNotFound())
-	defer ts.Close()
-
-	newRequest := func(method, url string, body string) *http.Request {
-		r, err := http.NewRequest(method, ts.URL+url, strings.NewReader(body))
-		if err != nil {
-			t.Fatalf(fmtErrNewRequest, method, url, err)
-		}
-		return r
-	}
-
-	tests := []testStruct{
-		{
-			name:           "ARouteThatDoesNotExist GET should return Http Status 404 Not Found",
-			wantStatusCode: http.StatusNotFound,
-			wantBody:       "",
-			paramKeyValues: make(map[string]string),
-			r:              newRequest(http.MethodGet, "/ARouteThatDoesNotExist", ""),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.r.Header.Set(go_http.HeaderContentType, go_http.MIMEAppJSONCharsetUTF8)
-			resp, err := http.DefaultClient.Do(tt.r)
-			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer go_http.CloseBody(resp.Body, tt.name, l)
-			if err != nil {
-				fmt.Printf(fmtErr, err, resp.Body)
-				t.Fatal(err)
-			}
-			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
-			receivedJson, _ := io.ReadAll(resp.Body)
-			printWantedReceived(tt.wantBody, receivedJson)
-			// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
-			assert.Contains(t, string(receivedJson), tt.wantBody, msgRespNotExpected)
-		})
-	}
-}
-
-func TestGoHttpServerReadinessHandler(t *testing.T) {
-	myServer := go_http.NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, version.APP, 0))
-	ts := httptest.NewServer(myServer.GetReadinessHandler())
-	defer ts.Close()
-
-	newRequest := func(method, url string, body string) *http.Request {
-		r, err := http.NewRequest(method, ts.URL+url, strings.NewReader(body))
-		if err != nil {
-			t.Fatalf(fmtErrNewRequest, method, url, err)
-		}
-		return r
-	}
-
-	tests := []testStruct{
-		{
-			name:           "readiness GET should return Http Status Ok",
-			wantStatusCode: http.StatusOK,
-			wantBody:       "",
-			paramKeyValues: make(map[string]string),
-			r:              newRequest(http.MethodGet, "/readiness", ""),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.r.Header.Set(go_http.HeaderContentType, go_http.MIMEAppJSONCharsetUTF8)
-			resp, err := http.DefaultClient.Do(tt.r)
-			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer go_http.CloseBody(resp.Body, tt.name, l)
-			if err != nil {
-				fmt.Printf(fmtErr, err, resp.Body)
-				t.Fatal(err)
-			}
-			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
-			receivedJson, _ := io.ReadAll(resp.Body)
-			printWantedReceived(tt.wantBody, receivedJson)
-			// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
-			assert.Contains(t, string(receivedJson), tt.wantBody, msgRespNotExpected)
-		})
-	}
-}
-
-func TestGoHttpServerHealthHandler(t *testing.T) {
-	myServer := go_http.NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, version.APP, 0))
-	ts := httptest.NewServer(myServer.GetHealthHandler())
-	defer ts.Close()
-
-	newRequest := func(method, url string, body string) *http.Request {
-		r, err := http.NewRequest(method, ts.URL+url, strings.NewReader(body))
-		if err != nil {
-			t.Fatalf(fmtErrNewRequest, method, url, err)
-		}
-		return r
-	}
-
-	tests := []testStruct{
-		{
-			name:           "1: Get on health should return Http Status Ok",
-			wantStatusCode: http.StatusOK,
-			wantBody:       "",
-			paramKeyValues: make(map[string]string),
-			r:              newRequest(http.MethodGet, "/health", ""),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.r.Header.Set(go_http.HeaderContentType, go_http.MIMEAppJSONCharsetUTF8)
-			resp, err := http.DefaultClient.Do(tt.r)
-			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer go_http.CloseBody(resp.Body, tt.name, l)
-			if err != nil {
-				fmt.Printf(fmtErr, err, resp.Body)
-				t.Fatal(err)
-			}
-			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
-			receivedJson, _ := io.ReadAll(resp.Body)
-
-			printWantedReceived(tt.wantBody, receivedJson)
-			// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
-			assert.Contains(t, string(receivedJson), tt.wantBody, msgRespNotExpected)
-		})
-	}
-}
-
-func TestGoHttpServerTimeHandler(t *testing.T) {
-	myServer := go_http.NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(os.Stdout, version.APP, log.Lshortfile))
-	ts := httptest.NewServer(myServer.GetTimeHandler())
-	defer ts.Close()
-	now := time.Now()
-	expectedResult := fmt.Sprintf("{\"time\":\"%s\"}", now.Format(time.RFC3339))
-
-	newRequest := func(method, url string, body string) *http.Request {
-		r, err := http.NewRequest(method, ts.URL+url, strings.NewReader(body))
-		if err != nil {
-			t.Fatalf(fmtErrNewRequest, method, url, err)
-		}
-		return r
-	}
-
-	tests := []testStruct{
-		{
-			name:           "1: Get on time should return Http Status Ok",
-			wantStatusCode: http.StatusOK,
-			wantBody:       expectedResult,
-			paramKeyValues: make(map[string]string),
-			r:              newRequest(http.MethodGet, "/time", ""),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.r.Header.Set(go_http.HeaderContentType, go_http.MIMEAppJSON)
-			resp, err := http.DefaultClient.Do(tt.r)
-			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer go_http.CloseBody(resp.Body, tt.name, l)
-			if err != nil {
-				fmt.Printf(fmtErr, err, resp.Body)
-				t.Fatal(err)
-			}
-			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
-			receivedJson, _ := io.ReadAll(resp.Body)
-
-			printWantedReceived(tt.wantBody, receivedJson)
-			// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
-			assert.Contains(t, string(receivedJson), tt.wantBody, msgRespNotExpected)
-		})
-	}
-}
-
-func TestGetKubernetesConnInfo(t *testing.T) {
-
-	l := log.New(os.Stdout, version.APP, log.Lshortfile)
-
-	type args struct {
-		logger *log.Logger
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *info.K8sInfo
-		wantErr assert.ErrorAssertionFunc
-	}{
-		{
-			name: "should return empty strings and an error when K8S_SERVICE_HOST is not set",
-			args: args{logger: l},
-			want: &info.K8sInfo{
-				CurrentNamespace: "",
-				Version:          "",
-				Token:            "",
-				CaCert:           "",
-			},
-			wantErr: assert.Error,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := info.GetKubernetesConnInfo(tt.args.logger)
-			if !tt.wantErr(t, err, fmt.Sprintf("GetKubernetesConnInfo() %s", tt.name)) {
-				return
-			}
-			assert.Equalf(t, tt.want, got, "GetKubernetesConnInfo(%v)", tt.args.logger)
 		})
 	}
 }
@@ -558,57 +257,6 @@ func TestGetJsonFromUrl(t *testing.T) {
 	}
 }
 
-func TestGoHttpServerWaitHandler(t *testing.T) {
-	myServer := go_http.NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, version.APP, 0))
-	ts := httptest.NewServer(myServer.GetWaitHandler(1))
-	defer ts.Close()
-	expectedResult := fmt.Sprintf("{\"waited\":\"%v seconds\"}", 1)
-
-	newRequest := func(method, url string, body string) *http.Request {
-		r, err := http.NewRequest(method, ts.URL+url, strings.NewReader(body))
-		if err != nil {
-			t.Fatalf(fmtErrNewRequest, method, url, err)
-		}
-		return r
-	}
-
-	tests := []testStruct{
-		{
-			name:           "1: Get on /wait should return Http Status Ok",
-			wantStatusCode: http.StatusOK,
-			wantBody:       expectedResult,
-			paramKeyValues: make(map[string]string),
-			r:              newRequest(http.MethodGet, "/wait", ""),
-		},
-		{
-			name:           "2: Post on /wait should return an http error method not allowed ",
-			wantStatusCode: http.StatusMethodNotAllowed,
-			wantBody:       "",
-			paramKeyValues: make(map[string]string),
-			r:              newRequest(http.MethodPost, "/wait", `{"task":"test not allowed method "}`),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.r.Header.Set(go_http.HeaderContentType, go_http.MIMEAppJSONCharsetUTF8)
-			resp, err := http.DefaultClient.Do(tt.r)
-			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer go_http.CloseBody(resp.Body, tt.name, l)
-			if err != nil {
-				fmt.Printf(fmtErr, err, resp.Body)
-				t.Fatal(err)
-			}
-			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
-			receivedJson, _ := io.ReadAll(resp.Body)
-
-			printWantedReceived(tt.wantBody, receivedJson)
-			// check that receivedJson contains the specified tt.wantBody substring . https://pkg.go.dev/github.com/stretchr/testify/assert#Contains
-			assert.Contains(t, string(receivedJson), tt.wantBody, msgRespNotExpected)
-		})
-	}
-}
-
 func setPortEnv(t *testing.T, port int) {
 	err := os.Setenv("PORT", fmt.Sprintf("%d", port))
 	if err != nil {
@@ -660,7 +308,7 @@ func executeTest(t *testing.T, tt TestMainStruct, listenAddr string, l *log.Logg
 		assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
 		receivedJson, _ := io.ReadAll(resp.Body)
 		rInfo := &info.RuntimeInfo{}
-		printWantedReceived(tt.wantBody, receivedJson)
+		tools.PrintWantedReceived(tt.wantBody, receivedJson, l)
 		if tt.wantStatusCode == http.StatusOK {
 			if tt.contentType == go_http.MIMEAppJSON {
 				err = json.Unmarshal(receivedJson, rInfo)

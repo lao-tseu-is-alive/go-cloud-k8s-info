@@ -4,6 +4,7 @@ import "time"
 
 const (
 	defaultProtocol            = "http"
+	defaultPort                = 8080
 	defaultSecondsToSleep      = 3
 	secondsShutDownTimeout     = 5 * time.Second  // maximum number of second to wait before closing server
 	defaultReadTimeout         = 10 * time.Second // max time to read request from the client
@@ -20,4 +21,5 @@ const (
 	defaultNotFound            = "404 page not found"
 	defaultNotFoundDescription = "🤔 ℍ𝕞𝕞... 𝕤𝕠𝕣𝕣𝕪 :【𝟜𝟘𝟜 : ℙ𝕒𝕘𝕖 ℕ𝕠𝕥 𝔽𝕠𝕦𝕟𝕕】🕳️ 🔥"
 	formatErrRequest           = "ERROR: Http method not allowed [%s] %s  path:'%s', RemoteAddrIP: [%s]\n"
+	fmtErrNewRequest           = "### ERROR http.NewRequest %s on [%s] error is :%v\n"
 )

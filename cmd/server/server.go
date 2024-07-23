@@ -66,7 +66,7 @@ func main() {
 	server := go_http.NewGoHttpServer(listenAddr, l)
 	// curl -vv  -X POST -H 'Content-Type: application/json'  http://localhost:8080/time   ==> 405 Method Not Allowed,
 	// curl -vv  -X GET  -H 'Content-Type: application/json'  http://localhost:8080/time	==>200 OK , {"time":"2024-07-15T15:30:21+02:00"}
-	server.AddRoute("GET /hello", server.GetHandlerStaticPage("Hello", "Hello World!"))
+	server.AddRoute("GET /hello", go_http.GetHandlerStaticPage("Hello", "Hello World!", l))
 	// using new server Mux in Go 1.22 https://pkg.go.dev/net/http#ServeMux
 	mux := server.GetRouter()
 	mux.Handle("GET /{$}", go_http.NewMiddleware(

@@ -3,34 +3,33 @@ package go_http
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 )
 
-//############# BEGIN HANDLERS
-
-func (s *GoHttpServer) GetReadinessHandler() http.HandlerFunc {
+func GetReadinessHandler(l *log.Logger) http.HandlerFunc {
 	handlerName := "GetReadinessHandler"
-	s.logger.Printf(initCallMsg, handlerName)
+	l.Printf(initCallMsg, handlerName)
 	return func(w http.ResponseWriter, r *http.Request) {
-		TraceRequest(handlerName, r, s.logger)
+		TraceRequest(handlerName, r, l)
 		w.WriteHeader(http.StatusOK)
 	}
 }
-func (s *GoHttpServer) GetHealthHandler() http.HandlerFunc {
+func GetHealthHandler(l *log.Logger) http.HandlerFunc {
 	handlerName := "GetHealthHandler"
-	s.logger.Printf(initCallMsg, handlerName)
+	l.Printf(initCallMsg, handlerName)
 	return func(w http.ResponseWriter, r *http.Request) {
-		TraceRequest(handlerName, r, s.logger)
+		TraceRequest(handlerName, r, l)
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
-func (s *GoHttpServer) GetHandlerNotFound() http.HandlerFunc {
+func GetHandlerNotFound(l *log.Logger) http.HandlerFunc {
 	handlerName := "GetHandlerNotFound"
-	s.logger.Printf(initCallMsg, handlerName)
+	l.Printf(initCallMsg, handlerName)
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.logger.Printf(formatErrRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
+		l.Printf(formatErrRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
 		w.Header().Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 		w.WriteHeader(http.StatusNotFound)
 		rootPathNotFoundCounter.Inc()
@@ -46,60 +45,57 @@ func (s *GoHttpServer) GetHandlerNotFound() http.HandlerFunc {
 		}
 		err := json.NewEncoder(w).Encode(data)
 		if err != nil {
-			s.logger.Printf("💥💥 ERROR: [%s] Not Found was unable to Fprintf. path:'%s', from IP: [%s]\n", handlerName, r.URL.Path, r.RemoteAddr)
+			l.Printf("💥💥 ERROR: [%s] Not Found was unable to Fprintf. path:'%s', from IP: [%s]\n", handlerName, r.URL.Path, r.RemoteAddr)
 			http.Error(w, "Internal server error. myDefaultHandler was unable to Fprintf", http.StatusInternalServerError)
 		}
 	}
 }
-func (s *GoHttpServer) GetHandlerStaticPage(title string, descr string) http.HandlerFunc {
+
+func GetHandlerStaticPage(title string, description string, l *log.Logger) http.HandlerFunc {
 	handlerName := fmt.Sprintf("GetHandlerStaticPage[%s]", title)
-	s.logger.Printf(initCallMsg, handlerName)
+	l.Printf(initCallMsg, handlerName)
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.logger.Printf(formatErrRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
+		TraceRequest(handlerName, r, l)
 		w.Header().Set(HeaderContentType, MIMEHtml)
 		w.WriteHeader(http.StatusOK)
-		n, err := fmt.Fprintf(w, getHtmlPage(title, descr))
+		n, err := fmt.Fprintf(w, getHtmlPage(title, description))
 		if err != nil {
-			s.logger.Printf("💥💥 ERROR: [%s]  was unable to Fprintf. path:'%s', from IP: [%s], send_bytes:%d\n", handlerName, r.URL.Path, r.RemoteAddr, n)
+			l.Printf("💥💥 ERROR: [%s]  was unable to Fprintf. path:'%s', from IP: [%s], send_bytes:%d\n", handlerName, r.URL.Path, r.RemoteAddr, n)
 			http.Error(w, "Internal server error. GetHandlerStaticPage was unable to Fprintf", http.StatusInternalServerError)
 		}
 	}
 }
-func (s *GoHttpServer) GetTimeHandler() http.HandlerFunc {
+func GetTimeHandler(l *log.Logger) http.HandlerFunc {
 	handlerName := "GetTimeHandler"
-	s.logger.Printf(initCallMsg, handlerName)
+	l.Printf(initCallMsg, handlerName)
 	return func(w http.ResponseWriter, r *http.Request) {
-		TraceRequest(handlerName, r, s.logger)
+		TraceRequest(handlerName, r, l)
 		now := time.Now()
 		w.Header().Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 		w.WriteHeader(http.StatusOK)
 		_, err := fmt.Fprintf(w, "{\"time\":\"%s\"}", now.Format(time.RFC3339))
 		if err != nil {
-			s.logger.Printf("Error doing fmt.Fprintf err: %s", err)
-			return
+			l.Printf("Error doing fmt.Fprintf err: %s", err)
 		}
 	}
 }
-func (s *GoHttpServer) GetWaitHandler(secondsToSleep int) http.HandlerFunc {
+func GetWaitHandler(secondsToSleep int, l *log.Logger) http.HandlerFunc {
 	handlerName := "GetWaitHandler"
-	s.logger.Printf(initCallMsg, handlerName)
+	l.Printf(initCallMsg, handlerName)
 	durationOfSleep := time.Duration(secondsToSleep) * time.Second
 	return func(w http.ResponseWriter, r *http.Request) {
-		TraceRequest(handlerName, r, s.logger)
+		TraceRequest(handlerName, r, l)
 		if r.Method == http.MethodGet {
 			w.Header().Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
 			time.Sleep(durationOfSleep) // simulate a delay to be ready
 			w.WriteHeader(http.StatusOK)
 			_, err := fmt.Fprintf(w, "{\"waited\":\"%v seconds\"}", secondsToSleep)
 			if err != nil {
-				s.logger.Printf("Error doing fmt.Fprintf err: %s", err)
-				return
+				l.Printf("Error doing fmt.Fprintf err: %s", err)
 			}
 		} else {
-			s.logger.Printf(formatErrRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
+			l.Printf(formatErrRequest, handlerName, r.Method, r.URL.Path, r.RemoteAddr)
 			http.Error(w, httpErrMethodNotAllow, http.StatusMethodNotAllowed)
 		}
 	}
 }
-
-// ############# END HANDLERS
