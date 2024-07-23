@@ -133,6 +133,7 @@ spec:
           requests:          # explicit request of the minimum amount of resources the pod need
             cpu: 100m        # 100 millicpu or millicores 0.1 or 10% of a CPU core of a running node
             memory: 32Mi
+            ephemeral-storage: 2Mi
         livenessProbe:           # To check the health of the Pod
           httpGet:
             path: /health
