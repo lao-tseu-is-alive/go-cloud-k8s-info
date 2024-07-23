@@ -17,7 +17,7 @@ a simple golang microservice http server without using docker in just **two sing
     scripts/01_build_image.sh
     scripts/02_deploy_to_k8s.sh
 #### Specifications :
-+ All the Go code is in one simple file [server.go](https://github.com/lao-tseu-is-alive/go-cloud-k8s-info/blob/main/server.go).
++ Just Go code, **no frameworks**, starts from one file [cmd/server/server.go](https://github.com/lao-tseu-is-alive/go-cloud-k8s-info/blob/main/cmd/server/server.go).
 + Using [Rancher desktop](https://docs.rancherdesktop.io/) to deploy the excellent [k3s](https://k3s.io/) kubernetes on your development computer.
 + We choose to build container image with [nerdctl](https://github.com/containerd/nerdctl): the  Docker-compatible CLI for [containerd](https://containerd.io/) just to show that you don't need Docker on your Linux box anymore.
 + We will scan for security issues and other vulnerabilities **before** building a container image (using [Trivy](https://aquasecurity.github.io/trivy/)) 
@@ -124,7 +124,7 @@ scripts/02_deploy_to_k8s.sh
 ```
 or run the commands in this script one by one
 ```bash
-kubectl apply -f k8s-deployment.yml
+kubectl apply -f deployments/go-testing/deployment.yml
 #let's check the pods in the cluster
 kubectl get pods -o wide
 kubectl get services -o wide

@@ -1,4 +1,4 @@
-package httpclient
+package go_http
 
 import (
 	"io"

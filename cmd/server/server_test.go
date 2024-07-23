@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lao-tseu-is-alive/go-cloud-k8s-info/pkg/config"
-	"github.com/lao-tseu-is-alive/go-cloud-k8s-info/pkg/httpclient"
+	"github.com/lao-tseu-is-alive/go-cloud-k8s-info/pkg/go_http"
 	"github.com/lao-tseu-is-alive/go-cloud-k8s-info/pkg/info"
 	"github.com/lao-tseu-is-alive/go-cloud-k8s-info/pkg/version"
 	"github.com/stretchr/testify/assert"
@@ -133,8 +133,8 @@ func TestGetPortFromEnv(t *testing.T) {
 func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 	var nameParameter string
 	listenAddr := fmt.Sprintf(":%d", defaultPort)
-	myServer := NewGoHttpServer(listenAddr, l)
-	ts := httptest.NewServer(myServer.getMyDefaultHandler())
+	myServer := go_http.NewGoHttpServer(listenAddr, l)
+	ts := httptest.NewServer(GetMyDefaultHandler(myServer))
 	defer ts.Close()
 
 	newRequest := func(method, url string, body string) *http.Request {
@@ -177,7 +177,7 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 			}
 			resp, err := http.DefaultClient.Do(tt.r)
 			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer httpclient.CloseBody(resp.Body, tt.name, l)
+			defer go_http.CloseBody(resp.Body, tt.name, l)
 			if err != nil {
 				fmt.Printf(fmtErr, err, resp.Body)
 				t.Fatal(err)
@@ -198,8 +198,8 @@ func TestGoHttpServerMyDefaultHandler(t *testing.T) {
 }
 
 func TestGoHttpServerHandlerNotFound(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, version.APP, 0))
-	ts := httptest.NewServer(myServer.getHandlerNotFound())
+	myServer := go_http.NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, version.APP, 0))
+	ts := httptest.NewServer(myServer.GetHandlerNotFound())
 	defer ts.Close()
 
 	newRequest := func(method, url string, body string) *http.Request {
@@ -222,10 +222,10 @@ func TestGoHttpServerHandlerNotFound(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.r.Header.Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
+			tt.r.Header.Set(go_http.HeaderContentType, go_http.MIMEAppJSONCharsetUTF8)
 			resp, err := http.DefaultClient.Do(tt.r)
 			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer httpclient.CloseBody(resp.Body, tt.name, l)
+			defer go_http.CloseBody(resp.Body, tt.name, l)
 			if err != nil {
 				fmt.Printf(fmtErr, err, resp.Body)
 				t.Fatal(err)
@@ -240,8 +240,8 @@ func TestGoHttpServerHandlerNotFound(t *testing.T) {
 }
 
 func TestGoHttpServerReadinessHandler(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, version.APP, 0))
-	ts := httptest.NewServer(myServer.getReadinessHandler())
+	myServer := go_http.NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, version.APP, 0))
+	ts := httptest.NewServer(myServer.GetReadinessHandler())
 	defer ts.Close()
 
 	newRequest := func(method, url string, body string) *http.Request {
@@ -264,10 +264,10 @@ func TestGoHttpServerReadinessHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.r.Header.Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
+			tt.r.Header.Set(go_http.HeaderContentType, go_http.MIMEAppJSONCharsetUTF8)
 			resp, err := http.DefaultClient.Do(tt.r)
 			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer httpclient.CloseBody(resp.Body, tt.name, l)
+			defer go_http.CloseBody(resp.Body, tt.name, l)
 			if err != nil {
 				fmt.Printf(fmtErr, err, resp.Body)
 				t.Fatal(err)
@@ -282,8 +282,8 @@ func TestGoHttpServerReadinessHandler(t *testing.T) {
 }
 
 func TestGoHttpServerHealthHandler(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, version.APP, 0))
-	ts := httptest.NewServer(myServer.getHealthHandler())
+	myServer := go_http.NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, version.APP, 0))
+	ts := httptest.NewServer(myServer.GetHealthHandler())
 	defer ts.Close()
 
 	newRequest := func(method, url string, body string) *http.Request {
@@ -306,10 +306,10 @@ func TestGoHttpServerHealthHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.r.Header.Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
+			tt.r.Header.Set(go_http.HeaderContentType, go_http.MIMEAppJSONCharsetUTF8)
 			resp, err := http.DefaultClient.Do(tt.r)
 			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer httpclient.CloseBody(resp.Body, tt.name, l)
+			defer go_http.CloseBody(resp.Body, tt.name, l)
 			if err != nil {
 				fmt.Printf(fmtErr, err, resp.Body)
 				t.Fatal(err)
@@ -325,8 +325,8 @@ func TestGoHttpServerHealthHandler(t *testing.T) {
 }
 
 func TestGoHttpServerTimeHandler(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(os.Stdout, version.APP, log.Lshortfile))
-	ts := httptest.NewServer(myServer.getTimeHandler())
+	myServer := go_http.NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(os.Stdout, version.APP, log.Lshortfile))
+	ts := httptest.NewServer(myServer.GetTimeHandler())
 	defer ts.Close()
 	now := time.Now()
 	expectedResult := fmt.Sprintf("{\"time\":\"%s\"}", now.Format(time.RFC3339))
@@ -351,10 +351,10 @@ func TestGoHttpServerTimeHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.r.Header.Set(HeaderContentType, MIMEAppJSON)
+			tt.r.Header.Set(go_http.HeaderContentType, go_http.MIMEAppJSON)
 			resp, err := http.DefaultClient.Do(tt.r)
 			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer httpclient.CloseBody(resp.Body, tt.name, l)
+			defer go_http.CloseBody(resp.Body, tt.name, l)
 			if err != nil {
 				fmt.Printf(fmtErr, err, resp.Body)
 				t.Fatal(err)
@@ -370,8 +370,8 @@ func TestGoHttpServerTimeHandler(t *testing.T) {
 }
 
 func TestGoHttpServerWaitHandler(t *testing.T) {
-	myServer := NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, version.APP, 0))
-	ts := httptest.NewServer(myServer.getWaitHandler(1))
+	myServer := go_http.NewGoHttpServer(fmt.Sprintf(":%d", defaultPort), log.New(io.Discard, version.APP, 0))
+	ts := httptest.NewServer(myServer.GetWaitHandler(1))
 	defer ts.Close()
 	expectedResult := fmt.Sprintf("{\"waited\":\"%v seconds\"}", 1)
 
@@ -402,10 +402,10 @@ func TestGoHttpServerWaitHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.r.Header.Set(HeaderContentType, MIMEAppJSONCharsetUTF8)
+			tt.r.Header.Set(go_http.HeaderContentType, go_http.MIMEAppJSONCharsetUTF8)
 			resp, err := http.DefaultClient.Do(tt.r)
 			l.Printf(fmtTraceInfo, tt.name, tt.r.Method, tt.r.URL)
-			defer httpclient.CloseBody(resp.Body, tt.name, l)
+			defer go_http.CloseBody(resp.Body, tt.name, l)
 			if err != nil {
 				fmt.Printf(fmtErr, err, resp.Body)
 				t.Fatal(err)
@@ -422,7 +422,7 @@ func TestGoHttpServerWaitHandler(t *testing.T) {
 
 func TestMainExecution(t *testing.T) {
 	defaultPort := 9999
-	listenAddr := fmt.Sprintf("%s://%s:%d", defaultProtocol, "127.0.0.1", defaultPort)
+	listenAddr := fmt.Sprintf("%s://%s:%d", "http", "127.0.0.1", defaultPort)
 	err := os.Setenv("PORT", fmt.Sprintf("%d", defaultPort))
 	if err != nil {
 		t.Errorf("💥💥 ERROR: Unable to set env variable PORT")
@@ -436,7 +436,7 @@ func TestMainExecution(t *testing.T) {
 		defer wg.Done()
 		main()
 	}()
-	WaitForHttpServer(listenAddr, 1*time.Second, 10)
+	go_http.WaitForHttpServer(listenAddr, 1*time.Second, 10)
 
 	newRequest := func(method, url string, body string, useFormUrlencodedContentType bool) *http.Request {
 		fmt.Printf("INFO: 🚀🚀'newRequest %s on %s ##BODY : %+v'\n", method, url, body)
@@ -445,9 +445,9 @@ func TestMainExecution(t *testing.T) {
 			t.Fatalf(fmtErrNewRequest, method, url, err)
 		}
 		if method == http.MethodPost && useFormUrlencodedContentType {
-			r.Header.Set(HeaderContentType, "Application/x-www-form-urlencoded")
+			r.Header.Set(go_http.HeaderContentType, "Application/x-www-form-urlencoded")
 		} else {
-			r.Header.Set(HeaderContentType, MIMEAppJSON)
+			r.Header.Set(go_http.HeaderContentType, go_http.MIMEAppJSON)
 		}
 		return r
 	}
@@ -468,7 +468,7 @@ func TestMainExecution(t *testing.T) {
 		{
 			name:                         "Get on default get handler should contain the Appname field",
 			wantStatusCode:               http.StatusOK,
-			contentType:                  MIMEAppJSON,
+			contentType:                  go_http.MIMEAppJSON,
 			wantBody:                     fmt.Sprintf("\"appname\": \"%s\"", version.APP),
 			paramKeyValues:               make(map[string]string),
 			httpMethod:                   http.MethodGet,
@@ -479,7 +479,7 @@ func TestMainExecution(t *testing.T) {
 		{
 			name:                         "Post on default get handler should return an http error method not allowed ",
 			wantStatusCode:               http.StatusMethodNotAllowed,
-			contentType:                  MIMEAppJSON,
+			contentType:                  go_http.MIMEAppJSON,
 			wantBody:                     "Method Not Allowed",
 			paramKeyValues:               make(map[string]string),
 			httpMethod:                   http.MethodPost,
@@ -490,7 +490,7 @@ func TestMainExecution(t *testing.T) {
 		{
 			name:                         "Get on nonexistent route should return an http error not found ",
 			wantStatusCode:               http.StatusNotFound,
-			contentType:                  MIMEAppJSON,
+			contentType:                  go_http.MIMEAppJSON,
 			wantBody:                     "page not found",
 			paramKeyValues:               make(map[string]string),
 			httpMethod:                   http.MethodGet,
@@ -501,7 +501,7 @@ func TestMainExecution(t *testing.T) {
 		{
 			name:                         "Get on default Server Path should return a valid json containing param value",
 			wantStatusCode:               http.StatusOK,
-			contentType:                  MIMEAppJSON,
+			contentType:                  go_http.MIMEAppJSON,
 			wantBody:                     `"param_name": "╚»☯💥⚡✌ℂ𝔾𝕀𝕃✌⚡💥☯«╝"`,
 			paramKeyValues:               map[string]string{"name": "╚»☯💥⚡✌ℂ𝔾𝕀𝕃✌⚡💥☯«╝"},
 			httpMethod:                   http.MethodGet,
@@ -512,7 +512,7 @@ func TestMainExecution(t *testing.T) {
 		{
 			name:                         "/health Post should return an http error method not allowed ",
 			wantStatusCode:               http.StatusMethodNotAllowed,
-			contentType:                  MIMEAppJSON,
+			contentType:                  go_http.MIMEAppJSON,
 			wantBody:                     "",
 			paramKeyValues:               make(map[string]string),
 			httpMethod:                   http.MethodPost,
@@ -523,7 +523,7 @@ func TestMainExecution(t *testing.T) {
 		{
 			name:                         "/readiness Post should return an http error method not allowed ",
 			wantStatusCode:               http.StatusMethodNotAllowed,
-			contentType:                  MIMEAppJSON,
+			contentType:                  go_http.MIMEAppJSON,
 			wantBody:                     "",
 			paramKeyValues:               make(map[string]string),
 			httpMethod:                   http.MethodPost,
@@ -534,7 +534,7 @@ func TestMainExecution(t *testing.T) {
 		{
 			name:                         "/time Post should return an http error method not allowed ",
 			wantStatusCode:               http.StatusMethodNotAllowed,
-			contentType:                  MIMEAppJSON,
+			contentType:                  go_http.MIMEAppJSON,
 			wantBody:                     "",
 			paramKeyValues:               make(map[string]string),
 			httpMethod:                   http.MethodPost,
@@ -545,7 +545,7 @@ func TestMainExecution(t *testing.T) {
 		{
 			name:                         "/hello Get should return a welcome message",
 			wantStatusCode:               http.StatusOK,
-			contentType:                  MIMEHtml,
+			contentType:                  go_http.MIMEHtml,
 			wantBody:                     "Hello World!",
 			paramKeyValues:               make(map[string]string),
 			httpMethod:                   http.MethodGet,
@@ -572,13 +572,13 @@ func TestMainExecution(t *testing.T) {
 				fmt.Printf(fmtErr, err, resp.Body)
 				t.Fatal(err)
 			}
-			defer httpclient.CloseBody(resp.Body, tt.name, l)
+			defer go_http.CloseBody(resp.Body, tt.name, l)
 			assert.Equal(t, tt.wantStatusCode, resp.StatusCode, assertCorrectStatusCodeExpected)
 			receivedJson, _ := io.ReadAll(resp.Body)
 			rInfo := &info.RuntimeInfo{}
 			printWantedReceived(tt.wantBody, receivedJson)
 			if tt.wantStatusCode == http.StatusOK {
-				if tt.contentType == MIMEAppJSON {
+				if tt.contentType == go_http.MIMEAppJSON {
 					err = json.Unmarshal(receivedJson, rInfo)
 					assert.Nil(t, err, "the output should be a valid json")
 				}
@@ -757,7 +757,7 @@ func TestGetJsonFromUrl(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := info.GetJsonFromUrl(tt.args.url, tt.args.bearerToken, tt.args.caCert, tt.args.allowInsecure, defaultReadTimeout, tt.args.logger)
+			got, err := info.GetJsonFromUrl(tt.args.url, tt.args.bearerToken, tt.args.caCert, tt.args.allowInsecure, 10*time.Second, tt.args.logger)
 			if !tt.wantErr(t, err, fmt.Sprintf("GetJsonFromUrl(%v, %v, %v, %v)", tt.args.url, tt.args.bearerToken, tt.args.caCert, tt.args.logger)) {
 				return
 			}

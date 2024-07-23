@@ -5,7 +5,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"github.com/lao-tseu-is-alive/go-cloud-k8s-info/pkg/httpclient"
+	"github.com/lao-tseu-is-alive/go-cloud-k8s-info/pkg/go_http"
 	"io"
 	"log"
 	"net/http"
@@ -148,7 +148,7 @@ func GetJsonFromUrl(url string, bearerToken string, caCert []byte, allowInsecure
 		logger.Println("Error on sending request.\n[ERROR] -", err)
 		return "", err
 	}
-	defer httpclient.CloseBody(resp.Body, "GetJsonFromUrl", logger)
+	defer go_http.CloseBody(resp.Body, "GetJsonFromUrl", logger)
 	if resp.StatusCode != http.StatusOK {
 		logger.Printf("Error on response StatusCode is not OK Received StatusCode:%d\n", resp.StatusCode)
 		return "", errors.New(fmt.Sprintf("Error on response StatusCode:%d\n", resp.StatusCode))
@@ -219,7 +219,7 @@ func GetKubernetesLatestVersion(logger *log.Logger) (string, error) {
 		logger.Println("Error on response.\n[ERROR] -", err)
 		return fmt.Sprintf("GetKubernetesLatestVersion was unable to get content from %s, Error: %v", k8sUrl, err), err
 	}
-	defer httpclient.CloseBody(resp.Body, "GetKubernetesLatestVersion", logger)
+	defer go_http.CloseBody(resp.Body, "GetKubernetesLatestVersion", logger)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
