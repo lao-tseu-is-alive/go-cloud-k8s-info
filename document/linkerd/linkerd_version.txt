@@ -1,2 +1,0 @@
-Client version: stable-2.11.4
-Server version: stable-2.11.4

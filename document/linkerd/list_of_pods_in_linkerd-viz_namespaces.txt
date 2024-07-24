@@ -1,8 +1,0 @@
-# output of executing :
-# kubectl get pods -n linkerd-viz -o jsonpath="{.items[*].spec.containers[*].image}" |tr -s '[[:space:]]' '\n' |sort |uniq -c >list_of_pods_in_linkerd-viz_namespaces.txt
-      1 cr.l5d.io/linkerd/grafana:stable-2.11.4
-      1 cr.l5d.io/linkerd/metrics-api:stable-2.11.4
-      6 cr.l5d.io/linkerd/proxy:stable-2.11.4
-      2 cr.l5d.io/linkerd/tap:stable-2.11.4
-      1 cr.l5d.io/linkerd/web:stable-2.11.4
-      1 prom/prometheus:v2.19.3

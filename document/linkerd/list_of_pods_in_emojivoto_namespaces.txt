@@ -1,4 +1,0 @@
-      4 cr.l5d.io/linkerd/proxy:stable-2.11.4
-      1 docker.l5d.io/buoyantio/emojivoto-emoji-svc:v11
-      1 docker.l5d.io/buoyantio/emojivoto-voting-svc:v11
-      2 docker.l5d.io/buoyantio/emojivoto-web:v11
