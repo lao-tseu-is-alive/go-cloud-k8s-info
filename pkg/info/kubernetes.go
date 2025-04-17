@@ -18,7 +18,6 @@ import (
 
 const (
 	fmtErrK8sServiceHostEnvNotFound = "KUBERNETES_SERVICE_HOST ENV variable does not exist (🤔 maybe because not inside K8s ??).Err :  %v"
-	caCertPath                      = "certificates/isrg-root-x1-cross-signed.pem"
 	defaultReadTimeout              = 10 * time.Second
 )
 
@@ -190,27 +189,9 @@ func GetKubernetesLatestVersion(logger *log.Logger) (string, error) {
 		logger.Printf("Error on http.NewRequest [ERROR: %v]\n", err)
 		return "", err
 	}
-	caCert, err := os.ReadFile(caCertPath)
-	if err != nil {
-		logger.Printf("Error on ReadFile(caCertPath) [ERROR: %v]\n", err)
-		return "", err
-	}
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			RootCAs: caCertPool,
-		},
-	}
-
-	//tr := &http.Transport{ TLSClientConfig: &tls.Config{InsecureSkipVerify: true} }
-
-	// add authorization header to the req
-	// req.Header.Add("Authorization", bearer)
 	// Send req using http Client
 	client := &http.Client{
-		Timeout:   defaultReadTimeout,
-		Transport: tr,
+		Timeout: defaultReadTimeout,
 	}
 
 	resp, err := client.Do(req)

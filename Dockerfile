@@ -1,9 +1,5 @@
 # Start from the latest golang base image
-FROM golang:1.22.5-alpine3.20 AS builder
-
-ENV PATH /usr/local/go/bin:$PATH
-ENV GOLANG_VERSION 1.22.5
-
+FROM golang:1.24.2-alpine3.21 AS builder
 
 # Add Maintainer Info
 LABEL maintainer="cgil"
@@ -12,6 +8,8 @@ LABEL org.opencontainers.image.description="This is a go-cloud-k8s-info containe
 LABEL org.opencontainers.image.url="https://ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:latest"
 LABEL org.opencontainers.image.authors="cgil"
 LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.version="1.0.0"
+LABEL org.opencontainers.image.source="https://github.com/lao-tseu-is-alive/go-cloud-k8s-common"
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
@@ -23,12 +21,12 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # Copy the source from the current directory to the Working Directory inside the container
-COPY cmd/server ./server
+COPY "cmd/server" ./server
 COPY pkg ./pkg
 
 
 # Build the Go app
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o go-info-server ./server
+RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags="-w -s" -o go-info-server ./server
 
 
 ######## Start a new stage  #######
