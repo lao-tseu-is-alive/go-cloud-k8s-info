@@ -3,13 +3,13 @@ FROM golang:1.24.2-alpine3.21 AS builder
 
 # Add Maintainer Info
 LABEL maintainer="cgil"
-LABEL org.opencontainers.image.title="go-cloud-k8s-shell"
+LABEL org.opencontainers.image.title="go-cloud-k8s-info"
 LABEL org.opencontainers.image.description="This is a go-cloud-k8s-info container image, a simple microservice written in Golang that gives some runtime information"
 LABEL org.opencontainers.image.url="https://ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:latest"
 LABEL org.opencontainers.image.authors="cgil"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.version="1.0.0"
-LABEL org.opencontainers.image.source="https://github.com/lao-tseu-is-alive/go-cloud-k8s-common"
+LABEL org.opencontainers.image.source="https://github.com/lao-tseu-is-alive/go-cloud-k8s-info"
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
@@ -36,6 +36,15 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags="-w -s" -o go-info-server ./se
 # https://github.com/vfarcic/base-container-images-demo
 # https://youtu.be/82ZCJw9poxM
 FROM scratch
+# Add Maintainer Info
+LABEL maintainer="cgil"
+LABEL org.opencontainers.image.title="go-cloud-k8s-info"
+LABEL org.opencontainers.image.description="This is a go-cloud-k8s-info container image, a simple microservice written in Golang that gives some runtime information"
+LABEL org.opencontainers.image.url="https://ghcr.io/lao-tseu-is-alive/go-cloud-k8s-info:latest"
+LABEL org.opencontainers.image.authors="cgil"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.version="1.0.0"
+LABEL org.opencontainers.image.source="https://github.com/lao-tseu-is-alive/go-cloud-k8s-info"
 # to comply with security best practices
 # Running containers with 'root' user can lead to a container escape situation (the default with Docker...).
 # It is a best practice to run containers as non-root users
